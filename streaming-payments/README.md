@@ -1,7 +1,4 @@
-# Private Streaming Payments Example Code
-
-This README.md file explains the high-level perspective of the provided private streaming payments example code. 
-The code demonstrates a private payment streaming program (PSP) on the Solana using Light protocol.
+A private payment streaming program on Solana using Light protocol v3.
 
 ## Prerequisites
 
@@ -10,18 +7,18 @@ Before running the code, ensure that you have the following installed on your ma
 - circom
 - rust
 - cargo-expand (```cargo install cargo-expand```)
-- solana-cli >=1.16.4
+- solana-cli = 1.16.4
 
 ## Overview
 
 
-1. **Light Circuit**: The custom Light circuit `./circuit/pspPaymentStreaming.light` is used to define the logic of the PSP (see the .light file for detailed documentation of the code).
+1. **Light Circuit**: The custom Light circuit `./circuit/pspPaymentStreaming.light` is used to define the logic of the PSP (see the .light file for detailed documentation of the code). At compilation, it expands into the necessary circuit files + on-chain program.
 
-2. **Test Setup**: The code performs an airdrop of Solana tokens to specific program addresses that are required for verification purposes.
+2. **Test Setup**: The code performs an airdrop of Solana tokens to specific program addresses required for verification purposes.
 
 3. **Create and Spend Program UTXO Test**: Initializes a light user and generates a shielded UTXO (by shielding SPL tokens into the Light escrow).
 
-4. **Payment Streaming Test**: Sets up a payment stream client, initializes the stream, and calculates the required parameters for streaming. The client then stores the initial program UTXO and checks its commitment hash. It then collects the stream for the current slot and executes the UTXO action, effectively streaming the payment.
+4. **Payment Streaming Test**: Sets up a payment stream client, initializes the stream and calculates the required parameters for streaming. The client then stores the initial program UTXO and checks its commitment hash. It then collects the stream for the current slot and executes the UTXO action, effectively streaming the payment.
 
 ## How to Run the Code
 
