@@ -206,12 +206,14 @@ template rock_paper_scissors( nAppUtxos, levels, nIns, nOuts, feeAsset, indexFee
     transactionHash === transactionHasher.out;
 
 signal input gameCommitmentHash[nAppUtxos];
+signal input userPubkey[nAppUtxos];
 component instructionHasher[nAppUtxos];
 
             component checkInstructionHash[nAppUtxos][nIns];
 for (var appUtxoIndex = 0; appUtxoIndex < nAppUtxos; appUtxoIndex++) {
-            	instructionHasher[appUtxoIndex] = Poseidon(1);
+            	instructionHasher[appUtxoIndex] = Poseidon(2);
 instructionHasher[appUtxoIndex].inputs[0] <== gameCommitmentHash[appUtxoIndex];
+instructionHasher[appUtxoIndex].inputs[1] <== userPubkey[appUtxoIndex];
 for (var inUtxoIndex = 0; inUtxoIndex < nIns; inUtxoIndex++) {
         checkInstructionHash[appUtxoIndex][inUtxoIndex] = ForceEqualIfEnabled();
         checkInstructionHash[appUtxoIndex][inUtxoIndex].in[0] <== inAppDataHash[inUtxoIndex];
@@ -220,7 +222,6 @@ for (var inUtxoIndex = 0; inUtxoIndex < nIns; inUtxoIndex++) {
    }
 
     }
-
 
 
 signal input isDraw;
@@ -233,7 +234,6 @@ signal input publicGameCommitment0;
 signal input publicGameCommitment1;
 
 signal input isPlayer2OutUtxo[nOuts];
-signal input opponentPubkey;
 
 var isWinTmp = 0;
 for (var i = 0; i < 3; i++) {
@@ -315,16 +315,6 @@ caseWin3.choice <== choice;
 caseWin3.isWin <== isWin[2];
 caseWin3.refChoice <== [2, 1];
 
-
-
-component getPublickey = get_publickey(nIns);
-getPublickey.isAppInUtxo <== isAppInUtxo[1];
-getPublickey.inPublicKey <== inPublicKey;
-getPublickey.opponentPubkey <== opponentPubkey;
-getPublickey.inAppDataHash <== inAppDataHash;
-getPublickey.actualAppDataHash <== instructionHasher[1].out;
-
-
 component checkUtxoDraw[nOuts];
 for (var outUtxoIndex = 0;outUtxoIndex < nOuts; outUtxoIndex++) {
 checkUtxoDraw[outUtxoIndex] = CheckUtxo(2);
@@ -335,15 +325,13 @@ checkUtxoDraw[outUtxoIndex].actualAmounts[0] <== outAmount[outUtxoIndex][0];
 checkUtxoDraw[outUtxoIndex].actualAmounts[1] <== 0;
 checkUtxoDraw[outUtxoIndex].requestedAmount <== gameAmount;
 checkUtxoDraw[outUtxoIndex].actualPubkey <== outPubkey[outUtxoIndex];
-checkUtxoDraw[outUtxoIndex].requestedPubkey <== opponentPubkey;
+checkUtxoDraw[outUtxoIndex].requestedPubkey <== userPubkey[1];
 checkUtxoDraw[outUtxoIndex].actualInstructionType <== outAppDataHash[outUtxoIndex];
 checkUtxoDraw[outUtxoIndex].requestedInstructionType <== 0;
 checkUtxoDraw[outUtxoIndex].actualVerifierPubkey <== outVerifierPubkey[outUtxoIndex];
 checkUtxoDraw[outUtxoIndex].requestedVerifierPubkey <== 0;
 checkUtxoDraw[outUtxoIndex].actualOutBlinding <== outBlinding[outUtxoIndex];
-log(opponentPubkey + opponentPubkey);
-
-checkUtxoDraw[outUtxoIndex].requestedOutBlinding <== opponentPubkey + opponentPubkey;
+checkUtxoDraw[outUtxoIndex].requestedOutBlinding <== userPubkey[1] + userPubkey[1];
 }
 
 component checkUtxoLoss[nOuts];
@@ -356,13 +344,13 @@ checkUtxoLoss[outUtxoIndex].actualAmounts[0] <== outAmount[outUtxoIndex][0];
 checkUtxoLoss[outUtxoIndex].actualAmounts[1] <== 0;
 checkUtxoLoss[outUtxoIndex].requestedAmount <== gameAmount * 2;
 checkUtxoLoss[outUtxoIndex].actualPubkey <== outPubkey[outUtxoIndex];
-checkUtxoLoss[outUtxoIndex].requestedPubkey <== opponentPubkey;
+checkUtxoLoss[outUtxoIndex].requestedPubkey <== userPubkey[1];
 checkUtxoLoss[outUtxoIndex].actualInstructionType <== outAppDataHash[outUtxoIndex];
 checkUtxoLoss[outUtxoIndex].requestedInstructionType <== 0;
 checkUtxoLoss[outUtxoIndex].actualVerifierPubkey <== outVerifierPubkey[outUtxoIndex];
 checkUtxoLoss[outUtxoIndex].requestedVerifierPubkey <== 0;
 checkUtxoLoss[outUtxoIndex].actualOutBlinding <== outBlinding[outUtxoIndex];
-checkUtxoLoss[outUtxoIndex].requestedOutBlinding <== opponentPubkey + opponentPubkey;
+checkUtxoLoss[outUtxoIndex].requestedOutBlinding <== userPubkey[1] + userPubkey[1];
 }
 
 }

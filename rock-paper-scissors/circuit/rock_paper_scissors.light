@@ -21,14 +21,10 @@ template rock_paper_scissors() {
     // Defines the data which is saved in the utxo
     #[utxoData]
     {
-        gameCommitmentHash
+        gameCommitmentHash,
+        userPubkey
     }
 
-    // todo check that one utxo exists with the instruction hash
-    // for (var i=0; i < nIns; i++) {
-    //     for (var j = 0; j < nrSwaps; j++){
-    //         inInstructionType[i] === instructionHasher[j].out * isSwapInputAccount[j][i];
-    
     signal input isDraw;
     signal input isWin[3]; // player 1 executes the transaction
     signal input isLoss;
@@ -40,7 +36,6 @@ template rock_paper_scissors() {
 
     // todo check indices
     signal input isPlayer2OutUtxo[nOuts];
-    signal input opponentPubkey;
 
     var isWinTmp = 0;
     for (var i = 0; i < 3; i++) {
@@ -129,20 +124,9 @@ template rock_paper_scissors() {
     caseWin3.isWin <== isWin[2];
     caseWin3.refChoice <== [2, 1];
 
-    
     // check utxos for case draw
     // the locked amounts should go back to each player
     // we just need to check for player 2 because player 1 executes the tx
-
-    component getPublickey = get_publickey(nIns);
-    getPublickey.isAppInUtxo <== isAppInUtxo[1];
-    getPublickey.inPublicKey <== inPublicKey;
-    getPublickey.opponentPubkey <== opponentPubkey;
-    getPublickey.inAppDataHash <== inAppDataHash;
-    // should be instructionHasher[1].out
-    getPublickey.actualAppDataHash <== instructionHasher[1].out;
-
-    
     component checkUtxoDraw[nOuts];
     for (var outUtxoIndex = 0;outUtxoIndex < nOuts; outUtxoIndex++) {
       checkUtxoDraw[outUtxoIndex] = CheckUtxo(2);
@@ -153,13 +137,13 @@ template rock_paper_scissors() {
       checkUtxoDraw[outUtxoIndex].actualAmounts[1] <== 0;
       checkUtxoDraw[outUtxoIndex].requestedAmount <== gameAmount;
       checkUtxoDraw[outUtxoIndex].actualPubkey <== outPubkey[outUtxoIndex];
-      checkUtxoDraw[outUtxoIndex].requestedPubkey <== opponentPubkey;
+      checkUtxoDraw[outUtxoIndex].requestedPubkey <== userPubkey[1];
       checkUtxoDraw[outUtxoIndex].actualInstructionType <== outAppDataHash[outUtxoIndex];
       checkUtxoDraw[outUtxoIndex].requestedInstructionType <== 0;
       checkUtxoDraw[outUtxoIndex].actualVerifierPubkey <== outVerifierPubkey[outUtxoIndex];
       checkUtxoDraw[outUtxoIndex].requestedVerifierPubkey <== 0;
       checkUtxoDraw[outUtxoIndex].actualOutBlinding <== outBlinding[outUtxoIndex];
-      checkUtxoDraw[outUtxoIndex].requestedOutBlinding <== opponentPubkey + opponentPubkey;
+      checkUtxoDraw[outUtxoIndex].requestedOutBlinding <== userPubkey[1] + userPubkey[1];
     }
 
     component checkUtxoLoss[nOuts];
@@ -172,13 +156,13 @@ template rock_paper_scissors() {
       checkUtxoLoss[outUtxoIndex].actualAmounts[1] <== 0;
       checkUtxoLoss[outUtxoIndex].requestedAmount <== gameAmount * 2;
       checkUtxoLoss[outUtxoIndex].actualPubkey <== outPubkey[outUtxoIndex];
-      checkUtxoLoss[outUtxoIndex].requestedPubkey <== opponentPubkey;
+      checkUtxoLoss[outUtxoIndex].requestedPubkey <== userPubkey[1];
       checkUtxoLoss[outUtxoIndex].actualInstructionType <== outAppDataHash[outUtxoIndex];
       checkUtxoLoss[outUtxoIndex].requestedInstructionType <== 0;
       checkUtxoLoss[outUtxoIndex].actualVerifierPubkey <== outVerifierPubkey[outUtxoIndex];
       checkUtxoLoss[outUtxoIndex].requestedVerifierPubkey <== 0;
       checkUtxoLoss[outUtxoIndex].actualOutBlinding <== outBlinding[outUtxoIndex];
-      checkUtxoLoss[outUtxoIndex].requestedOutBlinding <== opponentPubkey + opponentPubkey;
+      checkUtxoLoss[outUtxoIndex].requestedOutBlinding <== userPubkey[1] + userPubkey[1];
     }
 
 }

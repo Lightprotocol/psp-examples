@@ -1,8 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::hash::hash;
 
-pub mod light_utils;
-pub use light_utils::*;
+pub mod psp_accounts;
+pub use psp_accounts::*;
+pub mod auto_generated_accounts;
+pub use auto_generated_accounts::*;
 pub mod processor;
 pub use processor::*;
 pub mod verifying_key;
@@ -83,6 +85,16 @@ pub mod rock_paper_scissors {
         ctx: Context<'a, 'b, 'c, 'info, LightInstructionThird<'info, NR_CHECKED_INPUTS>>,
         inputs: Vec<u8>,
     ) -> Result<()> {
+        if ctx.accounts.verifier_state.checked_public_inputs[2] != ctx.accounts.game_pda.game.player_one_program_utxo.gameCommitmentHash.x {
+            msg!("{:?}", ctx.accounts.verifier_state.checked_public_inputs);
+            msg!("{:?}", ctx.accounts.game_pda.game.player_one_program_utxo.gameCommitmentHash);
+            panic!("player_one_program_utxo does not match");
+        }
+        if ctx.accounts.verifier_state.checked_public_inputs[3] != ctx.accounts.game_pda.game.player_two_program_utxo.unwrap().gameCommitmentHash.x {
+            msg!("{:?}", ctx.accounts.verifier_state.checked_public_inputs);
+            msg!("{:?}", ctx.accounts.game_pda.game.player_two_program_utxo.unwrap().gameCommitmentHash);
+            panic!("player_two_program_utxo does not match");
+        }
         verify_programm_proof(&ctx, &inputs)?;
         cpi_verifier_two(&ctx, &inputs)
     }
@@ -93,4 +105,33 @@ pub mod rock_paper_scissors {
     ) -> Result<()> {
         Ok(())
     }
+
+    pub fn create_game<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, CreateGameInstruction<'info>>,
+        utxo_bytes: Vec<u8>,
+    ) -> Result<()> {
+        let utxo = UtxoInternal::deserialize(&mut utxo_bytes.as_slice())?;
+        msg!("gameCommitmentHash {:?}", utxo.gameCommitmentHash.x.as_slice());
+        let res = anchor_lang::prelude::Pubkey::find_program_address(
+            &[utxo.gameCommitmentHash.x.as_slice(),b"game_pda"],
+            ctx.program_id,
+        ).0;
+        msg!("find_program_address {:?}", utxo);
+        // panic!("test");
+        ctx.accounts.game_pda.game = Game::new(utxo.try_into().unwrap());
+        Ok(())
+    }
+
+    pub fn join_game<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, JoinGameInstruction<'info>>,
+        utxo_bytes: Vec<u8>,
+        choice: u8,
+        slot: u64,
+    ) -> Result<()> {
+        let utxo: UtxoInternal = UtxoInternal::deserialize(&mut utxo_bytes.as_slice())?;
+        ctx.accounts.game_pda.game.join(utxo, choice, slot);
+        Ok(())
+    }
+
+
 }

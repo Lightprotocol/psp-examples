@@ -14,7 +14,9 @@ import {
   Provider,
   FIELD_SIZE,
   Relayer,
-  Account
+  Account,
+  confirmTransaction,
+  sendVersionedTransactions
 } from "@lightprotocol/zk.js";
 import {
   SystemProgram,
@@ -24,8 +26,10 @@ import {
 
 import { buildPoseidonOpt } from "circomlibjs";
 import { BN } from "@coral-xyz/anchor";
-import { IDL } from "../target/types/rock_paper_scissors";
+import { IDL, RockPaperScissors } from "../target/types/rock_paper_scissors";
 import { program } from "@coral-xyz/anchor/dist/cjs/native/system";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { findProgramAddressSync } from "@project-serum/anchor/dist/cjs/utils/pubkey";
 const path = require("path");
 
 const verifierProgramId = new PublicKey(
@@ -38,7 +42,8 @@ const RPC_URL = "http://127.0.0.1:8899";
 const GAME_AMOUNT = new BN(1_000_000_000);
 const BN_ONE = new BN(1);
 const BN_ZERO = new BN(0);
-
+const STANDARD_SEED = bs58.encode(new Array(32).fill(1));
+let STANDARD_ACCOUNT: Account;
 enum Choice {
   ROCK = 0,
   PAPER = 1,
@@ -57,6 +62,7 @@ type GameParameters = {
   slot: BN;
   player2CommitmentHash: BN;
   gameAmount: BN;
+  userPubkey: BN;
 }
 
 
@@ -64,9 +70,12 @@ type GameParameters = {
 class Game {
   gameParameters: GameParameters;
   programUtxo: Utxo;
-  constructor(gameParameters: GameParameters, programUtxo: Utxo) {
+  pda: PublicKey;
+
+  constructor(gameParameters: GameParameters, programUtxo: Utxo, pda: PublicKey) {
     this.gameParameters = gameParameters;
     this.programUtxo = programUtxo;
+    this.pda = pda;
   }
 
   static generateGameCommitmentHash(provider: LightProvider, gameParameters: GameParameters) {
@@ -85,13 +94,14 @@ class Game {
       choice,
       slot: new BN(slot),
       gameAmount,
-      player2CommitmentHash: BN_ZERO
+      player2CommitmentHash: BN_ZERO,
+      userPubkey: BN_ZERO
     };
     gameParameters.gameCommitmentHash = Game.generateGameCommitmentHash(lightProvider, gameParameters);
     const programUtxo = new Utxo({
       poseidon: POSEIDON,
       assets: [SystemProgram.programId],
-      account,
+      account:STANDARD_ACCOUNT,
       amounts: [gameParameters.gameAmount],
       appData: { gameCommitmentHash: gameParameters.gameCommitmentHash },
       appDataIdl: IDL,
@@ -99,8 +109,11 @@ class Game {
       assetLookupTable: lightProvider.lookUpTables.assetLookupTable,
       verifierProgramLookupTable: lightProvider.lookUpTables.verifierProgramLookupTable
     });
+
+    const pda = findProgramAddressSync([anchor.utils.bytes.utf8.encode("game_pda")], new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"))[0];
+    
     // TODO: create game onchain by creating a pda with the game commitment hash
-    return new Game(gameParameters, programUtxo);
+    return new Game(gameParameters, programUtxo, pda);
   }
 
   static async join(gameCommitmentHash: BN, choice: Choice, gameAmount: BN, lightProvider: LightProvider, account: Account) {
@@ -114,22 +127,24 @@ class Game {
       choice,
       slot: new BN(slot),
       gameAmount,
-      player2CommitmentHash: gameCommitmentHash
+      player2CommitmentHash: gameCommitmentHash,
+      userPubkey: account.pubkey
     };
     gameParameters.gameCommitmentHash = Game.generateGameCommitmentHash(lightProvider, gameParameters);
 
     const programUtxo = new Utxo({
       poseidon: lightProvider.poseidon,
       assets: [SystemProgram.programId],
-      account,
+      account:STANDARD_ACCOUNT,
       amounts: [gameAmount],
-      appData: { gameCommitmentHash: gameParameters.gameCommitmentHash },
+      appData: { gameCommitmentHash: gameParameters.gameCommitmentHash, userPubkey: account.pubkey },
       appDataIdl: IDL,
       verifierAddress: verifierProgramId,
       assetLookupTable: lightProvider.lookUpTables.assetLookupTable,
       verifierProgramLookupTable: lightProvider.lookUpTables.verifierProgramLookupTable
     });
-    return new Game(gameParameters, programUtxo);
+    const pda = findProgramAddressSync([anchor.utils.bytes.utf8.encode("game_pda")], new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"))[0];
+    return new Game(gameParameters, programUtxo, pda);
   }
 
   getWinner(opponentChoice: Choice): {winner: Winner, isWin: BN[], isDraw: BN, isLoss: BN}  {
@@ -153,8 +168,11 @@ class Game {
 class Player {
   user: User;
   game?: Game;
+  pspInstance: anchor.Program<RockPaperScissors>;
+
   constructor(user: User) {
     this.user = user;
+    this.pspInstance = new anchor.Program(IDL, new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"), user.provider.provider);
   }
 
   static async init(provider: anchor.AnchorProvider, relayer: TestRelayer| Relayer) {
@@ -168,7 +186,7 @@ class Player {
     // The light provider is a connection and wallet abstraction.
     // The wallet is used to derive the seed for your shielded keypair with a signature.
     let lightProvider = await LightProvider.init({ wallet, url: RPC_URL, relayer, confirmConfig });
-    lightProvider.addVerifierProgramPublickeyToLookUpTable(TransactionParameters.getVerifierProgramId(IDL));
+    // lightProvider.addVerifierProgramPublickeyToLookUpTable(TransactionParameters.getVerifierProgramId(IDL));
     return new Player(await User.init({ provider: lightProvider }));
   }
 
@@ -182,7 +200,37 @@ class Player {
       appUtxo: this.game.programUtxo,
       action,
     });
-    return {game: this.game, txHash };
+    //Buffer.alloc(224).fill(0) //
+    const borshCoder = new anchor.BorshAccountsCoder(IDL);
+    const serializationObject = {
+      ...this.game.programUtxo,
+      ...this.game.programUtxo.appData,
+      accountEncryptionPublicKey: this.game.programUtxo.account.encryptionKeypair.publicKey,
+      accountShieldedPublicKey: this.game.programUtxo.account.pubkey,
+    };
+    const utxoBytes= (await borshCoder.encode("utxo", serializationObject)).subarray(8);
+    // const utxoBytes = (await this.game.programUtxo.toBytes(false));
+
+    let tx = await this.pspInstance.methods.createGame(utxoBytes).accounts({
+      gamePda: this.game.pda,
+      signer: this.user.provider.wallet.publicKey,
+      systemProgram: SystemProgram.programId,
+    }).instruction();
+    let txHash2 = await sendVersionedTransactions([tx], this.user.provider.connection, this.user.provider.lookUpTables.versionedTransactionLookupTable, this.user.provider.wallet);
+    // const recentBlockhash = (await this.user.provider.connection.getLatestBlockhash()).blockhash;
+    // tx.recentBlockhash = recentBlockhash;
+    // tx.feePayer = this.user.provider.wallet.publicKey;
+
+    // tx = await this.user.provider.wallet.signTransaction(tx);
+    // try {
+    //   const txHash2 = await this.user.provider.connection.sendRawTransaction(tx.serialize());
+    // } catch (e) {
+    //   console.error(e);
+    // }
+    // const txHash2 = await this.user.provider.connection.sendRawTransaction(tx.serialize());
+    // await confirmTransaction(this.user.provider.connection, txHash2.signatures[0], "confirmed");
+    
+    return {game: this.game, txHashStoreAppUtxo: txHash, txHashCreateGame: txHash2 };
   }
 
   async join(gameCommitmentHash: BN,choice: Choice, gameAmount: BN, action: Action = Action.SHIELD) {
@@ -194,16 +242,67 @@ class Player {
       appUtxo: this.game.programUtxo,
       action,
     });
-    return {game: this.game, txHash };
+    const gamePdaAccountInfo = await this.pspInstance.account.gamePda.fetch(this.game.pda);
+    // @ts-ignore anchor type is not represented correctly
+    if(gamePdaAccountInfo.isJoinable === false) {
+      throw new Error("Game is not joinable");
+    }
+    // const utxoBytes = (await this.game.programUtxo.toBytes(false)).subarray(8);
+    const borshCoder = new anchor.BorshAccountsCoder(IDL);
+    const serializationObject = {
+      ...this.game.programUtxo,
+      ...this.game.programUtxo.appData,
+      accountEncryptionPublicKey: this.game.programUtxo.account.encryptionKeypair.publicKey,
+      accountShieldedPublicKey: this.game.programUtxo.account.pubkey,
+    };
+    const utxoBytes= (await borshCoder.encode("utxo", serializationObject)).subarray(8);
+
+    const tx = await this.pspInstance.methods.joinGame(utxoBytes,this.game.gameParameters.choice, this.game.gameParameters.slot).accounts({
+      gamePda: this.game.pda,
+      signer: this.user.provider.wallet.publicKey,
+      systemProgram: SystemProgram.programId,
+    }).instruction();
+    let txHash2 = await sendVersionedTransactions([tx], this.user.provider.connection, this.user.provider.lookUpTables.versionedTransactionLookupTable, this.user.provider.wallet);
+    
+    return {game: this.game, txHashStoreAppUtxo: txHash, txHashCreateGame: txHash2 };
   }
 
-  async execute(gameParametersPlayer2:GameParameters, player2PublicKey: string, player2ProgramUtxo:Utxo) {
-    const player2Account = Account.fromPubkey(player2PublicKey, this.user.provider.poseidon);
+  async execute(testProgramUtxo?: Utxo) {
+    // const player2Account = Account.fromPubkey(player2PublicKey, this.user.provider.poseidon);
     // TODO: check game is ready to execute
-
+    const gamePdaAccountInfo = await this.pspInstance.account.gamePda.fetch(this.game.pda);
+    // @ts-ignore anchor type is not represented correctly
+    if(gamePdaAccountInfo.isJoinable === true) {
+      throw new Error("Game is joinable not executable");
+    }
+    // @ts-ignore anchor type is not represented correctly
+    const gameParametersPlayer2 = {
+          // @ts-ignore anchor type is not represented correctly
+      gameCommitmentHash: gamePdaAccountInfo.game.playerTwoProgramUtxo.gameCommitmentHash,
+          // @ts-ignore anchor type is not represented correctly
+      choice: gamePdaAccountInfo.game.playerTwoChoice,
+          // @ts-ignore anchor type is not represented correctly
+      slot: gamePdaAccountInfo.game.slot,
+          // @ts-ignore anchor type is not represented correctly
+      userPubkey: gamePdaAccountInfo.game.playerTwoProgramUtxo.userPubkey,
+    }
+    const player2ProgramUtxo = new Utxo({
+      poseidon: this.user.provider.poseidon,
+      assets: [SystemProgram.programId],
+      account: STANDARD_ACCOUNT,
+          // @ts-ignore anchor type is not represented correctly
+      amounts: [gamePdaAccountInfo.game.playerTwoProgramUtxo.amounts[0]],
+      appData: { gameCommitmentHash: gameParametersPlayer2.gameCommitmentHash, userPubkey: gameParametersPlayer2.userPubkey },
+      appDataIdl: IDL,
+      verifierAddress: new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"),
+      assetLookupTable: this.user.provider.lookUpTables.assetLookupTable,
+      verifierProgramLookupTable: this.user.provider.lookUpTables.verifierProgramLookupTable,
+      blinding: gamePdaAccountInfo.game.playerTwoProgramUtxo.blinding
+    });
+    Utxo.equal(this.user.provider.poseidon, player2ProgramUtxo, testProgramUtxo, false);
     const circuitPath = path.join("build-circuit");
-
-    const winner = this.game.getWinner(gameParametersPlayer2.choice);
+    // @ts-ignore anchor type is not represented correctly
+    const winner = this.game.getWinner(gamePdaAccountInfo.game.playerTwoChoice);
     // We use getBalance to sync the current merkle tree
     await this.user.getBalance();
     const merkleTree = this.user.provider.solMerkleTree.merkleTree;
@@ -215,19 +314,22 @@ class Player {
 
     const programParameters: ProgramParameters = {
       inputs: {
-        publicGameCommitment0: this.game.gameParameters.gameCommitmentHash, publicGameCommitment1: gameParametersPlayer2.gameCommitmentHash,
+        publicGameCommitment0: this.game.gameParameters.gameCommitmentHash, publicGameCommitment1: player2ProgramUtxo.appData.gameCommitmentHash,
         gameCommitmentHash: [this.game.gameParameters.gameCommitmentHash, gameParametersPlayer2.gameCommitmentHash],
         choice: [this.game.gameParameters.choice, gameParametersPlayer2.choice],
         slot: [this.game.gameParameters.slot, gameParametersPlayer2.slot],
         gameAmount: GAME_AMOUNT,
-        opponentPubkey: player2Account.pubkey,
+        userPubkey: [this.game.gameParameters.userPubkey,player2ProgramUtxo.appData.userPubkey],
         isPlayer2OutUtxo:[
           [BN_ZERO, BN_ONE, BN_ZERO, BN_ZERO],
         ],
         ...winner
       },
       verifierIdl: IDL,
-      path: circuitPath
+      path: circuitPath,
+      accounts: {
+        gamePda: this.game.pda,
+      }
     };
     const amounts = this.getAmounts(winner.winner);
     const player1OutUtxo = new Utxo({
@@ -241,14 +343,14 @@ class Player {
     const player2OutUtxo = new Utxo({
       poseidon: this.user.provider.poseidon,
       assets: [SystemProgram.programId],
-      account: player2Account,
+      account: {pubkey: gameParametersPlayer2.userPubkey, encryptionKeypair: {publicKey: new Uint8Array(gamePdaAccountInfo.game.playerTwoProgramUtxo.accountEncryptionPublicKey)}} as Account,
       amounts: [amounts[1]],
       assetLookupTable: this.user.provider.lookUpTables.assetLookupTable,
       verifierProgramLookupTable: this.user.provider.lookUpTables.verifierProgramLookupTable,
-      blinding: player2Account.pubkey.add(player2Account.pubkey).mod(FIELD_SIZE)
+      blinding: gameParametersPlayer2.userPubkey.add(gameParametersPlayer2.userPubkey).mod(FIELD_SIZE)
     });  
     // TODO: find a better way to pay for relayer fees
-    let payerUtxo = this.user.getAllUtxos( );    
+    let payerUtxo = this.user.getAllUtxos( );
 
     let { txHash } = await this.user.executeAppUtxo({
       appUtxos: [this.game.programUtxo, player2ProgramUtxo],
@@ -282,6 +384,7 @@ describe("Test rock-paper-scissors", () => {
 
   before(async () => {
     POSEIDON = await buildPoseidonOpt();
+    STANDARD_ACCOUNT= new Account({poseidon: POSEIDON, seed: STANDARD_SEED});
     const relayerWallet = Keypair.generate();
     await airdropSol({
       connection: provider.connection,
@@ -297,7 +400,7 @@ describe("Test rock-paper-scissors", () => {
   });
 
 
-  it("Test Game Draw", async () => {
+  it.only("Test Game Draw", async () => {
     const player1 = await Player.init(provider, RELAYER);
     // shield additional sol to pay for relayer fees
     await player1.user.shield({
@@ -307,11 +410,10 @@ describe("Test rock-paper-scissors", () => {
     const player2 = await Player.init(provider, RELAYER);
 
     let res = await player1.createGame(Choice.ROCK, GAME_AMOUNT);
-    console.log("Created game by player 1:", res.txHash," choice: ", res.game.gameParameters.choice);
+    console.log("Created game with player 1:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
     let resJoin = await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
-    console.log("Joined game with player 2:", resJoin.txHash," choice: ", resJoin.game.gameParameters.choice);
-
-    let gameRes = await player1.execute(resJoin.game.gameParameters, player2.user.account.getPublicKey(), resJoin.game.programUtxo);
+    console.log("Joined game with player 2:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
+    let gameRes = await player1.execute(player2.game.programUtxo);
     console.log("Game result: ", gameRes.gameResult);
     assert.equal(gameRes.gameResult, Winner.DRAW);
   });
@@ -326,11 +428,10 @@ describe("Test rock-paper-scissors", () => {
     const player2 = await Player.init(provider, RELAYER);
 
     let res = await player1.createGame(Choice.SCISSORS, GAME_AMOUNT);
-    console.log("Created game by player 1:", res.txHash," choice: ", res.game.gameParameters.choice);
+    console.log("Created game with player 1:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
     let resJoin = await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
-    console.log("Joined game with player 2:", resJoin.txHash," choice: ", resJoin.game.gameParameters.choice);
-
-    let gameRes = await player1.execute(resJoin.game.gameParameters, player2.user.account.getPublicKey(), resJoin.game.programUtxo);
+    console.log("Joined game with player 2:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
+    let gameRes = await player1.execute();
     console.log("Game result: ", gameRes.gameResult);
     assert.equal(gameRes.gameResult, Winner.PLAYER2);
   });
@@ -345,11 +446,10 @@ describe("Test rock-paper-scissors", () => {
     const player2 = await Player.init(provider, RELAYER);
 
     let res = await player1.createGame(Choice.PAPER, GAME_AMOUNT);
-    console.log("Created game by player 1:", res.txHash," choice: ", res.game.gameParameters.choice);
+    console.log("Created game with player 1:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
     let resJoin = await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
-    console.log("Joined game with player 2:", resJoin.txHash," choice: ", resJoin.game.gameParameters.choice);
-
-    let gameRes = await player1.execute(resJoin.game.gameParameters, player2.user.account.getPublicKey(), resJoin.game.programUtxo);
+    console.log("Joined game with player 2:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
+    let gameRes = await player1.execute();
     console.log("Game result: ", gameRes.gameResult);
     assert.equal(gameRes.gameResult, Winner.PLAYER1);
   });

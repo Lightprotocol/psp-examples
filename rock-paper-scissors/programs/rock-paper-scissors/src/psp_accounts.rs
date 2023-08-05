@@ -6,7 +6,7 @@ use merkle_tree_program::{program::MerkleTreeProgram, EventMerkleTree};
 use merkle_tree_program::transaction_merkle_tree::state::TransactionMerkleTree;
 use merkle_tree_program::utils::constants::TOKEN_AUTHORITY_SEED;
 use verifier_program_two::{self, program::VerifierProgramTwo};
-
+use crate::u256;
 // Send and stores data.
 #[derive(Accounts)]
 pub struct LightInstructionFirst<'info, const NR_CHECKED_INPUTS: usize> {
@@ -39,15 +39,7 @@ pub struct LightInstructionSecond<'info, const NR_CHECKED_INPUTS: usize> {
     #[account(mut, seeds = [&signing_address.key().to_bytes(), VERIFIER_STATE_SEED], bump)]
     pub verifier_state: Account<'info, VerifierState10Ins<NR_CHECKED_INPUTS, TransactionsConfig>>,
 }
-pub const NR_CHECKED_INPUTS: usize = 4;
 
-#[allow(non_snake_case)]
-#[derive(Debug)]
-#[account]
-pub struct InstructionDataLightInstructionSecond {
-    publicGameCommitment0: [u8; 32],
-    publicGameCommitment1: [u8; 32],
-}
 
 /// Executes light transaction with state created in the first instruction.
 #[derive(Accounts)]
@@ -91,6 +83,84 @@ pub struct LightInstructionThird<'info, const NR_CHECKED_INPUTS: usize> {
     pub log_wrapper: UncheckedAccount<'info>,
     #[account(mut)]
     pub event_merkle_tree: AccountLoader<'info, EventMerkleTree>,
+    #[account(mut)]
+    pub game_pda: Account<'info, GamePda>,
+}
+
+const GAME_PDA_SEED: &[u8] = b"game_pda";
+// &utxo.gameCommitmentHash.x.as_slice(),
+
+#[allow(non_snake_case)]
+#[derive(Accounts)]
+pub struct CreateGameInstruction<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    #[allow(non_snake_case)]
+    #[account(init, seeds = [GAME_PDA_SEED],bump, payer = signer, space = 3000)]
+    pub game_pda: Account<'info, GamePda>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct JoinGameInstruction<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    // #[allow(non_snake_case)]
+    #[account(mut)]
+    pub game_pda: Account<'info, GamePda>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Debug)]
+#[account]
+pub struct GamePda {
+    pub game: Game,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Copy, AnchorDeserialize, AnchorSerialize,PartialEq, Clone)]
+pub struct UtxoInternal {
+    pub amounts: [u64; 2],
+    pub spl_asset_index: u64,
+    pub verifier_address_index: u64,
+    pub blinding: u256,
+    pub app_data_hash: u256,
+    pub account_shielded_public_key: u256,
+    pub account_encryption_public_key: [u8; 32],
+    pub gameCommitmentHash: u256,
+    pub userPubkey: u256,
+}
+
+#[derive(Debug, AnchorDeserialize, AnchorSerialize, Clone)]
+pub struct Game {
+    pub player_one_program_utxo: UtxoInternal,
+    pub player_two_program_utxo: Option<UtxoInternal>,
+    pub player_two_choice: Option<u8>,
+    _padding: [u8; 7],
+    pub slot: Option<u64>,
+    pub is_joinable: bool,
+    pub _padding2: [u8; 7]
+}
+
+impl Game {
+    pub fn new(player_one_program_utxo: UtxoInternal) -> Self {
+        Self {
+            player_one_program_utxo,
+            player_two_program_utxo: None,
+            slot: None,
+            player_two_choice: None,
+            _padding: [0u8; 7],
+            is_joinable: true,
+            _padding2: [0u8; 7],
+        }
+    }
+
+    pub fn join(&mut self, player_two_program_utxo: UtxoInternal, choice: u8, slot: u64) {
+        self.player_two_program_utxo = Some(player_two_program_utxo);
+        self.is_joinable = false;
+        self.player_two_choice = Some(choice);
+        self.slot = Some(slot);
+    }
 }
 
 #[derive(Debug)]
@@ -110,31 +180,4 @@ pub struct CloseVerifierState<'info, const NR_CHECKED_INPUTS: usize> {
     pub signing_address: Signer<'info>,
     #[account(mut, seeds = [&signing_address.key().to_bytes(), VERIFIER_STATE_SEED], bump, close=signing_address )]
     pub verifier_state: Account<'info, VerifierState10Ins<NR_CHECKED_INPUTS, TransactionsConfig>>,
-}
-
-#[allow(non_camel_case_types)]
-// helper struct to create anchor idl with u256 type
-#[account]
-pub struct u256 {
-    x: [u8; 32],
-}
-
-
-#[allow(non_snake_case)]
-#[account]
-pub struct Utxo {
-    amounts: [u64; 2],
-    spl_asset_index: u64,
-    verifier_address_index: u64,
-    blinding: u256,
-    app_data_hash: u256,
-    account_shielded_public_key: u256,
-    account_encryption_public_key: [u8; 32],
-    gameCommitmentHash: u256,
-}
-
-#[allow(non_snake_case)]
-#[account]
-pub struct UtxoAppData {
-    gameCommitmentHash: u256,
 }
