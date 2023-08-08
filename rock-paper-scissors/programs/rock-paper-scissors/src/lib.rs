@@ -85,12 +85,20 @@ pub mod rock_paper_scissors {
         ctx: Context<'a, 'b, 'c, 'info, LightInstructionThird<'info, NR_CHECKED_INPUTS>>,
         inputs: Vec<u8>,
     ) -> Result<()> {
-        if ctx.accounts.verifier_state.checked_public_inputs[2] != ctx.accounts.game_pda.game.player_one_program_utxo.gameCommitmentHash.x {
+        let mut reversed_public_inputs = ctx.accounts.verifier_state.checked_public_inputs[2];
+        reversed_public_inputs.reverse();
+        if reversed_public_inputs != ctx.accounts.game_pda.game.player_one_program_utxo.gameCommitmentHash.x {
+            for (idx, val)  in ctx.accounts.verifier_state.checked_public_inputs.iter().enumerate() {
+                msg!("Public input {}={:?}", idx, val);
+            }
+
             msg!("{:?}", ctx.accounts.verifier_state.checked_public_inputs);
             msg!("{:?}", ctx.accounts.game_pda.game.player_one_program_utxo.gameCommitmentHash);
             panic!("player_one_program_utxo does not match");
         }
-        if ctx.accounts.verifier_state.checked_public_inputs[3] != ctx.accounts.game_pda.game.player_two_program_utxo.unwrap().gameCommitmentHash.x {
+        let mut reversed_public_inputs = ctx.accounts.verifier_state.checked_public_inputs[3];
+        reversed_public_inputs.reverse();
+        if reversed_public_inputs != ctx.accounts.game_pda.game.player_two_program_utxo.unwrap().gameCommitmentHash.x {
             msg!("{:?}", ctx.accounts.verifier_state.checked_public_inputs);
             msg!("{:?}", ctx.accounts.game_pda.game.player_two_program_utxo.unwrap().gameCommitmentHash);
             panic!("player_two_program_utxo does not match");
@@ -113,7 +121,10 @@ pub mod rock_paper_scissors {
         let utxo = UtxoInternal::deserialize(&mut utxo_bytes.as_slice())?;
         msg!("gameCommitmentHash {:?}", utxo.gameCommitmentHash.x.as_slice());
         let res = anchor_lang::prelude::Pubkey::find_program_address(
-            &[utxo.gameCommitmentHash.x.as_slice(),b"game_pda"],
+            &[
+                b"game_pda",
+                //TODO: utxo.gameCommitmentHash.x.as_slice(),
+            ],
             ctx.program_id,
         ).0;
         msg!("find_program_address {:?}", utxo);

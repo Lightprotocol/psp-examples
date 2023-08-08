@@ -1,12 +1,13 @@
+use std::io::Read;
 use crate::processor::TransactionsConfig;
+use crate::u256;
 use anchor_lang::prelude::*;
 use anchor_spl::token::Token;
 use light_verifier_sdk::{light_transaction::VERIFIER_STATE_SEED, state::VerifierState10Ins};
-use merkle_tree_program::{program::MerkleTreeProgram, EventMerkleTree};
 use merkle_tree_program::transaction_merkle_tree::state::TransactionMerkleTree;
 use merkle_tree_program::utils::constants::TOKEN_AUTHORITY_SEED;
+use merkle_tree_program::{program::MerkleTreeProgram, EventMerkleTree};
 use verifier_program_two::{self, program::VerifierProgramTwo};
-use crate::u256;
 // Send and stores data.
 #[derive(Accounts)]
 pub struct LightInstructionFirst<'info, const NR_CHECKED_INPUTS: usize> {
@@ -40,7 +41,6 @@ pub struct LightInstructionSecond<'info, const NR_CHECKED_INPUTS: usize> {
     pub verifier_state: Account<'info, VerifierState10Ins<NR_CHECKED_INPUTS, TransactionsConfig>>,
 }
 
-
 /// Executes light transaction with state created in the first instruction.
 #[derive(Accounts)]
 pub struct LightInstructionThird<'info, const NR_CHECKED_INPUTS: usize> {
@@ -54,7 +54,7 @@ pub struct LightInstructionThird<'info, const NR_CHECKED_INPUTS: usize> {
     #[account(mut)]
     pub transaction_merkle_tree: AccountLoader<'info, TransactionMerkleTree>,
     /// CHECK: This is the cpi authority and will be enforced in the Merkle tree program.
-    #[account(mut, seeds= [MerkleTreeProgram::id().to_bytes().as_ref()], bump, seeds::program= VerifierProgramTwo::id())]
+    #[account(mut, seeds = [MerkleTreeProgram::id().to_bytes().as_ref()], bump, seeds::program= VerifierProgramTwo::id())]
     pub authority: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
     /// CHECK:` Is checked depending on deposit or withdrawal.
@@ -84,7 +84,7 @@ pub struct LightInstructionThird<'info, const NR_CHECKED_INPUTS: usize> {
     #[account(mut)]
     pub event_merkle_tree: AccountLoader<'info, EventMerkleTree>,
     #[account(mut)]
-    pub game_pda: Account<'info, GamePda>,
+    pub game_pda: Box<Account<'info, GamePda>>,
 }
 
 const GAME_PDA_SEED: &[u8] = b"game_pda";
@@ -92,11 +92,19 @@ const GAME_PDA_SEED: &[u8] = b"game_pda";
 
 #[allow(non_snake_case)]
 #[derive(Accounts)]
+// #[instruction(game_commitment_hash: [u8;32])]
 pub struct CreateGameInstruction<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[allow(non_snake_case)]
-    #[account(init, seeds = [GAME_PDA_SEED],bump, payer = signer, space = 3000)]
+    #[account(
+        init,
+        // seeds = [GAME_PDA_SEED, game_commitment_hash.as_ref()],
+        seeds = [GAME_PDA_SEED],
+        bump,
+        payer = signer,
+        space = 3000)
+    ]
     pub game_pda: Account<'info, GamePda>,
     pub system_program: Program<'info, System>,
 }
@@ -118,7 +126,7 @@ pub struct GamePda {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Copy, AnchorDeserialize, AnchorSerialize,PartialEq, Clone)]
+#[derive(Debug, Copy, AnchorDeserialize, AnchorSerialize, PartialEq, Clone)]
 pub struct UtxoInternal {
     pub amounts: [u64; 2],
     pub spl_asset_index: u64,
@@ -139,7 +147,7 @@ pub struct Game {
     _padding: [u8; 7],
     pub slot: Option<u64>,
     pub is_joinable: bool,
-    pub _padding2: [u8; 7]
+    pub _padding2: [u8; 7],
 }
 
 impl Game {

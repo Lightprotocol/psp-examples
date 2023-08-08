@@ -35,15 +35,15 @@ const path = require("path");
 const verifierProgramId = new PublicKey(
   "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
 );
-var POSEIDON: any, RELAYER: TestRelayer;
 
+let POSEIDON: any, RELAYER: TestRelayer;
 const RPC_URL = "http://127.0.0.1:8899";
-
 const GAME_AMOUNT = new BN(1_000_000_000);
 const BN_ONE = new BN(1);
 const BN_ZERO = new BN(0);
 const STANDARD_SEED = bs58.encode(new Array(32).fill(1));
 let STANDARD_ACCOUNT: Account;
+
 enum Choice {
   ROCK = 0,
   PAPER = 1,
@@ -64,8 +64,6 @@ type GameParameters = {
   gameAmount: BN;
   userPubkey: BN;
 }
-
-
 
 class Game {
   gameParameters: GameParameters;
@@ -103,14 +101,21 @@ class Game {
       assets: [SystemProgram.programId],
       account:STANDARD_ACCOUNT,
       amounts: [gameParameters.gameAmount],
-      appData: { gameCommitmentHash: gameParameters.gameCommitmentHash },
+      appData: { gameCommitmentHash: gameParameters.gameCommitmentHash, userPubkey: gameParameters.userPubkey },
       appDataIdl: IDL,
       verifierAddress: verifierProgramId,
       assetLookupTable: lightProvider.lookUpTables.assetLookupTable,
       verifierProgramLookupTable: lightProvider.lookUpTables.verifierProgramLookupTable
     });
 
-    const pda = findProgramAddressSync([anchor.utils.bytes.utf8.encode("game_pda")], new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"))[0];
+    // TODO: add gameCommitmentHash seeds
+    const pda = findProgramAddressSync(
+        [
+            anchor.utils.bytes.utf8.encode("game_pda"),
+          // gameParameters.gameCommitmentHash.toArrayLike(Buffer)
+        ],
+        new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS")
+    )[0];
     
     // TODO: create game onchain by creating a pda with the game commitment hash
     return new Game(gameParameters, programUtxo, pda);
@@ -143,7 +148,10 @@ class Game {
       assetLookupTable: lightProvider.lookUpTables.assetLookupTable,
       verifierProgramLookupTable: lightProvider.lookUpTables.verifierProgramLookupTable
     });
-    const pda = findProgramAddressSync([anchor.utils.bytes.utf8.encode("game_pda")], new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"))[0];
+    // TODO: add gameCommitmentHash to seeds
+    const pda = findProgramAddressSync([
+        anchor.utils.bytes.utf8.encode("game_pda")
+    ], new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"))[0];
     return new Game(gameParameters, programUtxo, pda);
   }
 
@@ -195,6 +203,7 @@ class Player {
       throw new Error("A game is already in progress.");
     }
     this.game = await Game.create(choice, gameAmount, this.user.provider, this.user.account);
+
     // TODO: merge with create pda for commitment hash
     const txHash = await this.user.storeAppUtxo({
       appUtxo: this.game.programUtxo,
@@ -343,7 +352,11 @@ class Player {
     const player2OutUtxo = new Utxo({
       poseidon: this.user.provider.poseidon,
       assets: [SystemProgram.programId],
-      account: {pubkey: gameParametersPlayer2.userPubkey, encryptionKeypair: {publicKey: new Uint8Array(gamePdaAccountInfo.game.playerTwoProgramUtxo.accountEncryptionPublicKey)}} as Account,
+      account: {
+        pubkey: gameParametersPlayer2.userPubkey,
+        encryptionKeypair: {
+          publicKey: new Uint8Array(gamePdaAccountInfo.game.playerTwoProgramUtxo.accountEncryptionPublicKey)}
+        } as Account,
       amounts: [amounts[1]],
       assetLookupTable: this.user.provider.lookUpTables.assetLookupTable,
       verifierProgramLookupTable: this.user.provider.lookUpTables.verifierProgramLookupTable,
@@ -358,7 +371,8 @@ class Player {
       outUtxos: [player1OutUtxo, player2OutUtxo],
       programParameters,
       action: Action.TRANSFER,
-      addOutUtxos: true
+      addOutUtxos: true,
+      shuffleEnabled: false
     });
 
     return {txHash, gameResult: winner.winner};
@@ -410,9 +424,9 @@ describe("Test rock-paper-scissors", () => {
     const player2 = await Player.init(provider, RELAYER);
 
     let res = await player1.createGame(Choice.ROCK, GAME_AMOUNT);
-    console.log("Created game with player 1:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
+    console.log("Player 1 created game");
     let resJoin = await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
-    console.log("Joined game with player 2:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
+    console.log("Player 2 joined game");
     let gameRes = await player1.execute(player2.game.programUtxo);
     console.log("Game result: ", gameRes.gameResult);
     assert.equal(gameRes.gameResult, Winner.DRAW);
@@ -428,10 +442,10 @@ describe("Test rock-paper-scissors", () => {
     const player2 = await Player.init(provider, RELAYER);
 
     let res = await player1.createGame(Choice.SCISSORS, GAME_AMOUNT);
-    console.log("Created game with player 1:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
+    console.log("Player 1 created game");
     let resJoin = await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
-    console.log("Joined game with player 2:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
-    let gameRes = await player1.execute();
+    console.log("Player 2 joined game");
+    let gameRes = await player1.execute(player2.game.programUtxo);
     console.log("Game result: ", gameRes.gameResult);
     assert.equal(gameRes.gameResult, Winner.PLAYER2);
   });
@@ -446,10 +460,10 @@ describe("Test rock-paper-scissors", () => {
     const player2 = await Player.init(provider, RELAYER);
 
     let res = await player1.createGame(Choice.PAPER, GAME_AMOUNT);
-    console.log("Created game with player 1:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
+    console.log("Player 1 created game");
     let resJoin = await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
-    console.log("Joined game with player 2:", res.txHashCreateGame," stored app utxo: ", res.txHashStoreAppUtxo," choice: ", res.game.gameParameters.choice);
-    let gameRes = await player1.execute();
+    console.log("Player 2 joined game");
+    let gameRes = await player1.execute(player2.game.programUtxo);
     console.log("Game result: ", gameRes.gameResult);
     assert.equal(gameRes.gameResult, Winner.PLAYER1);
   });
