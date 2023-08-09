@@ -4,7 +4,7 @@ Collection of custom PSPs (Private Solana Programs) built on top of [Light Proto
 
 These are reference implementations for Solana Localnet.
 
-Each PSP is bootstrapped using the [Light CLI](https://www.npmjs.com/package/@lightprotocol/cli) and leverages Light's [zk.js](https://npmjs.com/package/@lightprotocol/zk.js) on the client. 
+Each PSP is bootstrapped using the [Light CLI](https://www.npmjs.com/package/@lightprotocol/cli) and uses Light's [zk.js](https://npmjs.com/package/@lightprotocol/zk.js) on the client. 
 
 We'll add more examples over time and keep these up2date with latest changes.
 
