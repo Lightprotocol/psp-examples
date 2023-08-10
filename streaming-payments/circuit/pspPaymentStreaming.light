@@ -122,8 +122,8 @@ template CheckIndices(n) {
 *   indexFeeAsset = 0
 *   indexPublicAsset = 1
 *   nAssets = 3
-*   nInAssets = 3
-*   nOutAssets = 3
+*   nInAssets = 2
+*   nOutAssets = 2
 * Environment variables:
 *   txIntegrityHash;
 *   transactionVersion;
