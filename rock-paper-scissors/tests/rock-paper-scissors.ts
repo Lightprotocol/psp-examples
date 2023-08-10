@@ -2,20 +2,16 @@ import * as anchor from "@coral-xyz/anchor";
 import { assert } from "chai";
 import {
   Utxo,
-  TransactionParameters,
   Provider as LightProvider,
   confirmConfig,
   Action,
   TestRelayer,
   User,
-  ProgramUtxoBalance,
   airdropSol,
   ProgramParameters,
-  Provider,
   FIELD_SIZE,
   Relayer,
   Account,
-  confirmTransaction,
   sendVersionedTransactions
 } from "@lightprotocol/zk.js";
 import {
@@ -27,7 +23,6 @@ import {
 import { buildPoseidonOpt } from "circomlibjs";
 import { BN } from "@coral-xyz/anchor";
 import { IDL, RockPaperScissors } from "../target/types/rock_paper_scissors";
-import { program } from "@coral-xyz/anchor/dist/cjs/native/system";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { findProgramAddressSync } from "@project-serum/anchor/dist/cjs/utils/pubkey";
 const path = require("path");
@@ -93,9 +88,9 @@ class Game {
       slot: new BN(slot),
       gameAmount,
       player2CommitmentHash: BN_ZERO,
-      userPubkey: BN_ZERO
+      userPubkey: BN_ZERO,      
     };
-    gameParameters.gameCommitmentHash = Game.generateGameCommitmentHash(lightProvider, gameParameters);
+    gameParameters.gameCommitmentHash = Game.generateGameCommitmentHash(lightProvider, gameParameters);   
     const programUtxo = new Utxo({
       poseidon: POSEIDON,
       assets: [SystemProgram.programId],
@@ -109,14 +104,18 @@ class Game {
     });
 
     // TODO: add gameCommitmentHash seeds
+    // let seed = gameParameters.gameCommitmentHash.toArray("be", 32);
+    // console.log("start game, seed: ", seed);
     const pda = findProgramAddressSync(
         [
             anchor.utils.bytes.utf8.encode("game_pda"),
-          // gameParameters.gameCommitmentHash.toArrayLike(Buffer)
+            // Buffer.from(seed)
         ],
         new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS")
     )[0];
     
+    console.log("pda found: ", pda.toString());
+
     // TODO: create game onchain by creating a pda with the game commitment hash
     return new Game(gameParameters, programUtxo, pda);
   }
@@ -148,9 +147,12 @@ class Game {
       assetLookupTable: lightProvider.lookUpTables.assetLookupTable,
       verifierProgramLookupTable: lightProvider.lookUpTables.verifierProgramLookupTable
     });
-    // TODO: add gameCommitmentHash to seeds
+
+    // let seed = gameCommitmentHash.toArray("be", 32);
+    // console.log("join game, seed: ", seed);
     const pda = findProgramAddressSync([
         anchor.utils.bytes.utf8.encode("game_pda")
+        // Buffer.from(seed)
     ], new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"))[0];
     return new Game(gameParameters, programUtxo, pda);
   }
@@ -198,6 +200,17 @@ class Player {
     return new Player(await User.init({ provider: lightProvider }));
   }
 
+  async closeGame() {
+    if (!this.game) {
+      throw new Error("No game in progress.");
+    }
+    let tx = await this.pspInstance.methods.closeGame().accounts({
+      gamePda: this.game.pda,
+      signer: this.user.provider.wallet.publicKey,
+    }).instruction();
+    
+    let txHash = await sendVersionedTransactions([tx], this.user.provider.connection, this.user.provider.lookUpTables.versionedTransactionLookupTable, this.user.provider.wallet);
+  }
   async createGame(choice: Choice, gameAmount: BN, action: Action = Action.SHIELD) {
     if (this.game) {
       throw new Error("A game is already in progress.");
@@ -209,6 +222,7 @@ class Player {
       appUtxo: this.game.programUtxo,
       action,
     });
+    
     //Buffer.alloc(224).fill(0) //
     const borshCoder = new anchor.BorshAccountsCoder(IDL);
     const serializationObject = {
@@ -217,28 +231,20 @@ class Player {
       accountEncryptionPublicKey: this.game.programUtxo.account.encryptionKeypair.publicKey,
       accountShieldedPublicKey: this.game.programUtxo.account.pubkey,
     };
-    const utxoBytes= (await borshCoder.encode("utxo", serializationObject)).subarray(8);
+    const utxoBytes = (await borshCoder.encode("utxo", serializationObject)).subarray(8);
     // const utxoBytes = (await this.game.programUtxo.toBytes(false));
+
+    // let seed = this.game.gameParameters.gameCommitmentHash.toArray("be", 32);
+    // console.log("pda game, seed: ", seed);    
 
     let tx = await this.pspInstance.methods.createGame(utxoBytes).accounts({
       gamePda: this.game.pda,
       signer: this.user.provider.wallet.publicKey,
       systemProgram: SystemProgram.programId,
     }).instruction();
-    let txHash2 = await sendVersionedTransactions([tx], this.user.provider.connection, this.user.provider.lookUpTables.versionedTransactionLookupTable, this.user.provider.wallet);
-    // const recentBlockhash = (await this.user.provider.connection.getLatestBlockhash()).blockhash;
-    // tx.recentBlockhash = recentBlockhash;
-    // tx.feePayer = this.user.provider.wallet.publicKey;
-
-    // tx = await this.user.provider.wallet.signTransaction(tx);
-    // try {
-    //   const txHash2 = await this.user.provider.connection.sendRawTransaction(tx.serialize());
-    // } catch (e) {
-    //   console.error(e);
-    // }
-    // const txHash2 = await this.user.provider.connection.sendRawTransaction(tx.serialize());
-    // await confirmTransaction(this.user.provider.connection, txHash2.signatures[0], "confirmed");
     
+    let txHash2 = await sendVersionedTransactions([tx], this.user.provider.connection, this.user.provider.lookUpTables.versionedTransactionLookupTable, this.user.provider.wallet);
+       
     return {game: this.game, txHashStoreAppUtxo: txHash, txHashCreateGame: txHash2 };
   }
 
@@ -264,9 +270,9 @@ class Player {
       accountEncryptionPublicKey: this.game.programUtxo.account.encryptionKeypair.publicKey,
       accountShieldedPublicKey: this.game.programUtxo.account.pubkey,
     };
-    const utxoBytes= (await borshCoder.encode("utxo", serializationObject)).subarray(8);
+    const utxoBytes = (await borshCoder.encode("utxo", serializationObject)).subarray(8);
 
-    const tx = await this.pspInstance.methods.joinGame(utxoBytes,this.game.gameParameters.choice, this.game.gameParameters.slot).accounts({
+    const tx = await this.pspInstance.methods.joinGame(utxoBytes, this.game.gameParameters.choice, this.game.gameParameters.slot).accounts({
       gamePda: this.game.pda,
       signer: this.user.provider.wallet.publicKey,
       systemProgram: SystemProgram.programId,
@@ -414,7 +420,7 @@ describe("Test rock-paper-scissors", () => {
   });
 
 
-  it.only("Test Game Draw", async () => {
+  it("Test Game Draw", async () => {
     const player1 = await Player.init(provider, RELAYER);
     // shield additional sol to pay for relayer fees
     await player1.user.shield({
@@ -430,6 +436,7 @@ describe("Test rock-paper-scissors", () => {
     let gameRes = await player1.execute(player2.game.programUtxo);
     console.log("Game result: ", gameRes.gameResult);
     assert.equal(gameRes.gameResult, Winner.DRAW);
+    await player1.closeGame();
   });
 
   it("Test Game Loss", async () => {
@@ -448,6 +455,7 @@ describe("Test rock-paper-scissors", () => {
     let gameRes = await player1.execute(player2.game.programUtxo);
     console.log("Game result: ", gameRes.gameResult);
     assert.equal(gameRes.gameResult, Winner.PLAYER2);
+    await player1.closeGame();
   });
 
   it("Test Game Win", async () => {
@@ -466,5 +474,6 @@ describe("Test rock-paper-scissors", () => {
     let gameRes = await player1.execute(player2.game.programUtxo);
     console.log("Game result: ", gameRes.gameResult);
     assert.equal(gameRes.gameResult, Winner.PLAYER1);
+    await player1.closeGame();    
   });
 });

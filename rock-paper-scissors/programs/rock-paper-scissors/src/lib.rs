@@ -10,7 +10,6 @@ pub use processor::*;
 pub mod verifying_key;
 pub use verifying_key::*;
 
-
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[constant]
@@ -47,7 +46,7 @@ pub mod rock_paper_scissors {
         let pool_type = [0u8; 32];
         let mut program_id_hash = hash(&ctx.program_id.to_bytes()).to_bytes();
         program_id_hash[0] = 0;
-        
+
         let mut checked_inputs: [[u8; 32]; NR_CHECKED_INPUTS] = [[0u8; 32]; NR_CHECKED_INPUTS];
         checked_inputs[0] = program_id_hash;
         checked_inputs[1] = inputs_des.transaction_hash;
@@ -87,20 +86,58 @@ pub mod rock_paper_scissors {
     ) -> Result<()> {
         let mut reversed_public_inputs = ctx.accounts.verifier_state.checked_public_inputs[2];
         reversed_public_inputs.reverse();
-        if reversed_public_inputs != ctx.accounts.game_pda.game.player_one_program_utxo.gameCommitmentHash.x {
-            for (idx, val)  in ctx.accounts.verifier_state.checked_public_inputs.iter().enumerate() {
+        if reversed_public_inputs
+            != ctx
+                .accounts
+                .game_pda
+                .game
+                .player_one_program_utxo
+                .gameCommitmentHash
+                .x
+        {
+            for (idx, val) in ctx
+                .accounts
+                .verifier_state
+                .checked_public_inputs
+                .iter()
+                .enumerate()
+            {
                 msg!("Public input {}={:?}", idx, val);
             }
 
             msg!("{:?}", ctx.accounts.verifier_state.checked_public_inputs);
-            msg!("{:?}", ctx.accounts.game_pda.game.player_one_program_utxo.gameCommitmentHash);
+            msg!(
+                "{:?}",
+                ctx.accounts
+                    .game_pda
+                    .game
+                    .player_one_program_utxo
+                    .gameCommitmentHash
+            );
             panic!("player_one_program_utxo does not match");
         }
         let mut reversed_public_inputs = ctx.accounts.verifier_state.checked_public_inputs[3];
         reversed_public_inputs.reverse();
-        if reversed_public_inputs != ctx.accounts.game_pda.game.player_two_program_utxo.unwrap().gameCommitmentHash.x {
+        if reversed_public_inputs
+            != ctx
+                .accounts
+                .game_pda
+                .game
+                .player_two_program_utxo
+                .unwrap()
+                .gameCommitmentHash
+                .x
+        {
             msg!("{:?}", ctx.accounts.verifier_state.checked_public_inputs);
-            msg!("{:?}", ctx.accounts.game_pda.game.player_two_program_utxo.unwrap().gameCommitmentHash);
+            msg!(
+                "{:?}",
+                ctx.accounts
+                    .game_pda
+                    .game
+                    .player_two_program_utxo
+                    .unwrap()
+                    .gameCommitmentHash
+            );
             panic!("player_two_program_utxo does not match");
         }
         verify_programm_proof(&ctx, &inputs)?;
@@ -119,16 +156,28 @@ pub mod rock_paper_scissors {
         utxo_bytes: Vec<u8>,
     ) -> Result<()> {
         let utxo = UtxoInternal::deserialize(&mut utxo_bytes.as_slice())?;
-        msg!("gameCommitmentHash {:?}", utxo.gameCommitmentHash.x.as_slice());
+        msg!(
+            "gameCommitmentHash {:?}",
+            utxo.gameCommitmentHash.x.as_slice()
+        );
+        let gch: [u8; 32] = utxo
+            .gameCommitmentHash
+            .x
+            .as_slice()
+            .try_into()
+            .expect("slice with incorrect length");
+
+        msg!("gch as [u8;32] = {:?}", gch);
+
         let res = anchor_lang::prelude::Pubkey::find_program_address(
-            &[
-                b"game_pda",
-                //TODO: utxo.gameCommitmentHash.x.as_slice(),
-            ],
+            &[b"game_pda"],
+            // &[b"game_pda", &gch],
+            // &[&gch],
             ctx.program_id,
-        ).0;
+        )
+        .0;
         msg!("find_program_address {:?}", utxo);
-        // panic!("test");
+
         ctx.accounts.game_pda.game = Game::new(utxo.try_into().unwrap());
         Ok(())
     }
@@ -144,5 +193,7 @@ pub mod rock_paper_scissors {
         Ok(())
     }
 
-
+    pub fn close_game(_ctx: Context<CloseGame>) -> Result<()> {
+        Ok(())
+    }
 }

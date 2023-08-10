@@ -1,4 +1,3 @@
-use std::io::Read;
 use crate::processor::TransactionsConfig;
 use crate::u256;
 use anchor_lang::prelude::*;
@@ -99,7 +98,7 @@ pub struct CreateGameInstruction<'info> {
     #[allow(non_snake_case)]
     #[account(
         init,
-        // seeds = [GAME_PDA_SEED, game_commitment_hash.as_ref()],
+        // seeds = [&game_commitment_hash],
         seeds = [GAME_PDA_SEED],
         bump,
         payer = signer,
@@ -107,6 +106,19 @@ pub struct CreateGameInstruction<'info> {
     ]
     pub game_pda: Account<'info, GamePda>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CloseGame<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [GAME_PDA_SEED], 
+        bump,
+        close=signer
+    )]
+    pub game_pda: Account<'info, GamePda>,
 }
 
 #[derive(Accounts)]
