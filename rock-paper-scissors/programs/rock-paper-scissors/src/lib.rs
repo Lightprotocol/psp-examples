@@ -170,9 +170,8 @@ pub mod rock_paper_scissors {
         msg!("gch as [u8;32] = {:?}", gch);
 
         let res = anchor_lang::prelude::Pubkey::find_program_address(
-            &[b"game_pda"],
-            // &[b"game_pda", &gch],
-            // &[&gch],
+            // &[b"game_pda"],
+            &[&gch],
             ctx.program_id,
         )
         .0;
