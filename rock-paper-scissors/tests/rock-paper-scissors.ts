@@ -104,12 +104,12 @@ class Game {
     });
 
     // TODO: add gameCommitmentHash seeds
-    // let seed = gameParameters.gameCommitmentHash.toArray("be", 32);
-    // console.log("start game, seed: ", seed);
+    let seed = gameParameters.gameCommitmentHash.toArray("le", 32);
+    console.log("start game, seed: ", seed);
     const pda = findProgramAddressSync(
         [
-            anchor.utils.bytes.utf8.encode("game_pda"),
-            // Buffer.from(seed)
+            // anchor.utils.bytes.utf8.encode("game_pda"),
+            Buffer.from(seed)
         ],
         new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS")
     )[0];
@@ -148,11 +148,11 @@ class Game {
       verifierProgramLookupTable: lightProvider.lookUpTables.verifierProgramLookupTable
     });
 
-    // let seed = gameCommitmentHash.toArray("be", 32);
-    // console.log("join game, seed: ", seed);
+    let seed = gameCommitmentHash.toArray("le", 32);
+    console.log("join game, seed: ", seed);
     const pda = findProgramAddressSync([
-        anchor.utils.bytes.utf8.encode("game_pda")
-        // Buffer.from(seed)
+        // anchor.utils.bytes.utf8.encode("game_pda")
+        Buffer.from(seed)
     ], new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"))[0];
     return new Game(gameParameters, programUtxo, pda);
   }
@@ -234,8 +234,8 @@ class Player {
     const utxoBytes = (await borshCoder.encode("utxo", serializationObject)).subarray(8);
     // const utxoBytes = (await this.game.programUtxo.toBytes(false));
 
-    // let seed = this.game.gameParameters.gameCommitmentHash.toArray("be", 32);
-    // console.log("pda game, seed: ", seed);    
+    let seed = this.game.gameParameters.gameCommitmentHash.toArray("le", 32);
+    console.log("pda game, seed: ", seed);    
 
     let tx = await this.pspInstance.methods.createGame(utxoBytes).accounts({
       gamePda: this.game.pda,

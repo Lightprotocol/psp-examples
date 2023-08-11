@@ -86,20 +86,20 @@ pub struct LightInstructionThird<'info, const NR_CHECKED_INPUTS: usize> {
     pub game_pda: Box<Account<'info, GamePda>>,
 }
 
-const GAME_PDA_SEED: &[u8] = b"game_pda";
+// const GAME_PDA_SEED: &[u8] = b"game_pda";
 // &utxo.gameCommitmentHash.x.as_slice(),
 
 #[allow(non_snake_case)]
 #[derive(Accounts)]
-// #[instruction(game_commitment_hash: [u8;32])]
+#[instruction(game_commitment_hash: Vec<u8>)]
 pub struct CreateGameInstruction<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[allow(non_snake_case)]
     #[account(
         init,
-        // seeds = [&game_commitment_hash],
-        seeds = [GAME_PDA_SEED],
+        seeds = [&game_commitment_hash[game_commitment_hash.len()-64..game_commitment_hash.len()-32]],
+        // seeds = [GAME_PDA_SEED],
         bump,
         payer = signer,
         space = 3000)
@@ -109,13 +109,15 @@ pub struct CreateGameInstruction<'info> {
 }
 
 #[derive(Accounts)]
+// #[instruction(game_commitment_hash: Vec<u8>)]
 pub struct CloseGame<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
         mut,
-        seeds = [GAME_PDA_SEED], 
-        bump,
+        // seeds = [GAME_PDA_SEED], 
+        // seeds = [&game_commitment_hash[game_commitment_hash.len()-32..]],
+        // bump,
         close=signer
     )]
     pub game_pda: Account<'info, GamePda>,
