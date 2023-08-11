@@ -103,20 +103,14 @@ class Game {
       verifierProgramLookupTable: lightProvider.lookUpTables.verifierProgramLookupTable
     });
 
-    // TODO: add gameCommitmentHash seeds
     let seed = gameParameters.gameCommitmentHash.toArray("le", 32);
-    console.log("start game, seed: ", seed);
     const pda = findProgramAddressSync(
         [
-            // anchor.utils.bytes.utf8.encode("game_pda"),
             Buffer.from(seed)
         ],
         new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS")
     )[0];
-    
-    console.log("pda found: ", pda.toString());
 
-    // TODO: create game onchain by creating a pda with the game commitment hash
     return new Game(gameParameters, programUtxo, pda);
   }
 

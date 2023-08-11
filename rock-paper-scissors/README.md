@@ -51,18 +51,6 @@ yarn build
 yarn test
 ```
 
-## Common errors
-
-- __error: package `solana-program v1.16.5` cannot be built because it requires rustc 1.68.0 or newer, while the currently active rustc version is 1.65.0-dev__
-
-  Please install [solana-cli 1.16.4](https://docs.solana.com/cli/install-solana-cli-tools) or newer.
-
-
-- __error: no such command: `expand`__
-
-  Please install cargo-expand: `cargo install cargo-expand`.
-
-
 ## Contributing
 
 Contributions are welcome. Please open an issue or submit a pull request on GitHub.
