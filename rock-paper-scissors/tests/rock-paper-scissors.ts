@@ -103,29 +103,18 @@ class Game {
       verifierProgramLookupTable: lightProvider.lookUpTables.verifierProgramLookupTable
     });
 
-    // TODO: add gameCommitmentHash seeds
     let seed = gameParameters.gameCommitmentHash.toArray("le", 32);
-    console.log("start game, seed: ", seed);
     const pda = findProgramAddressSync(
         [
-            // anchor.utils.bytes.utf8.encode("game_pda"),
             Buffer.from(seed)
         ],
         new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS")
     )[0];
-    
-    console.log("pda found: ", pda.toString());
 
-    // TODO: create game onchain by creating a pda with the game commitment hash
     return new Game(gameParameters, programUtxo, pda);
   }
 
   static async join(gameCommitmentHash: BN, choice: Choice, gameAmount: BN, lightProvider: LightProvider, account: Account) {
-    // TODO: fetch pda from chain with getAllProgramAccounts
-    // sort program accounts by joinable
-    // join game
-    // if none available, create game
-    
     const slot = await lightProvider.connection.getSlot();
     const gameParameters: GameParameters = {
       choice,
@@ -149,9 +138,7 @@ class Game {
     });
 
     let seed = gameCommitmentHash.toArray("le", 32);
-    console.log("join game, seed: ", seed);
     const pda = findProgramAddressSync([
-        // anchor.utils.bytes.utf8.encode("game_pda")
         Buffer.from(seed)
     ], new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"))[0];
     return new Game(gameParameters, programUtxo, pda);
@@ -209,7 +196,7 @@ class Player {
       signer: this.user.provider.wallet.publicKey,
     }).instruction();
     
-    let txHash = await sendVersionedTransactions([tx], this.user.provider.connection, this.user.provider.lookUpTables.versionedTransactionLookupTable, this.user.provider.wallet);
+    await sendVersionedTransactions([tx], this.user.provider.connection, this.user.provider.lookUpTables.versionedTransactionLookupTable, this.user.provider.wallet);
   }
   async createGame(choice: Choice, gameAmount: BN, action: Action = Action.SHIELD) {
     if (this.game) {
@@ -217,13 +204,11 @@ class Player {
     }
     this.game = await Game.create(choice, gameAmount, this.user.provider, this.user.account);
 
-    // TODO: merge with create pda for commitment hash
     const txHash = await this.user.storeAppUtxo({
       appUtxo: this.game.programUtxo,
       action,
     });
     
-    //Buffer.alloc(224).fill(0) //
     const borshCoder = new anchor.BorshAccountsCoder(IDL);
     const serializationObject = {
       ...this.game.programUtxo,
@@ -232,11 +217,7 @@ class Player {
       accountShieldedPublicKey: this.game.programUtxo.account.pubkey,
     };
     const utxoBytes = (await borshCoder.encode("utxo", serializationObject)).subarray(8);
-    // const utxoBytes = (await this.game.programUtxo.toBytes(false));
-
-    let seed = this.game.gameParameters.gameCommitmentHash.toArray("le", 32);
-    console.log("pda game, seed: ", seed);    
-
+    
     let tx = await this.pspInstance.methods.createGame(utxoBytes).accounts({
       gamePda: this.game.pda,
       signer: this.user.provider.wallet.publicKey,
@@ -262,7 +243,7 @@ class Player {
     if(gamePdaAccountInfo.isJoinable === false) {
       throw new Error("Game is not joinable");
     }
-    // const utxoBytes = (await this.game.programUtxo.toBytes(false)).subarray(8);
+    
     const borshCoder = new anchor.BorshAccountsCoder(IDL);
     const serializationObject = {
       ...this.game.programUtxo,
@@ -283,8 +264,6 @@ class Player {
   }
 
   async execute(testProgramUtxo?: Utxo) {
-    // const player2Account = Account.fromPubkey(player2PublicKey, this.user.provider.poseidon);
-    // TODO: check game is ready to execute
     const gamePdaAccountInfo = await this.pspInstance.account.gamePda.fetch(this.game.pda);
     // @ts-ignore anchor type is not represented correctly
     if(gamePdaAccountInfo.isJoinable === true) {
@@ -292,13 +271,13 @@ class Player {
     }
     // @ts-ignore anchor type is not represented correctly
     const gameParametersPlayer2 = {
-          // @ts-ignore anchor type is not represented correctly
+      // @ts-ignore anchor type is not represented correctly
       gameCommitmentHash: gamePdaAccountInfo.game.playerTwoProgramUtxo.gameCommitmentHash,
-          // @ts-ignore anchor type is not represented correctly
+      // @ts-ignore anchor type is not represented correctly
       choice: gamePdaAccountInfo.game.playerTwoChoice,
-          // @ts-ignore anchor type is not represented correctly
+      // @ts-ignore anchor type is not represented correctly
       slot: gamePdaAccountInfo.game.slot,
-          // @ts-ignore anchor type is not represented correctly
+      // @ts-ignore anchor type is not represented correctly
       userPubkey: gamePdaAccountInfo.game.playerTwoProgramUtxo.userPubkey,
     }
     const player2ProgramUtxo = new Utxo({
@@ -368,7 +347,7 @@ class Player {
       verifierProgramLookupTable: this.user.provider.lookUpTables.verifierProgramLookupTable,
       blinding: gameParametersPlayer2.userPubkey.add(gameParametersPlayer2.userPubkey).mod(FIELD_SIZE)
     });  
-    // TODO: find a better way to pay for relayer fees
+
     let payerUtxo = this.user.getAllUtxos( );
 
     let { txHash } = await this.user.executeAppUtxo({
@@ -431,7 +410,7 @@ describe("Test rock-paper-scissors", () => {
 
     let res = await player1.createGame(Choice.ROCK, GAME_AMOUNT);
     console.log("Player 1 created game");
-    let resJoin = await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
+    await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
     console.log("Player 2 joined game");
     let gameRes = await player1.execute(player2.game.programUtxo);
     console.log("Game result: ", gameRes.gameResult);
@@ -450,7 +429,7 @@ describe("Test rock-paper-scissors", () => {
 
     let res = await player1.createGame(Choice.SCISSORS, GAME_AMOUNT);
     console.log("Player 1 created game");
-    let resJoin = await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
+    await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
     console.log("Player 2 joined game");
     let gameRes = await player1.execute(player2.game.programUtxo);
     console.log("Game result: ", gameRes.gameResult);
@@ -469,7 +448,7 @@ describe("Test rock-paper-scissors", () => {
 
     let res = await player1.createGame(Choice.PAPER, GAME_AMOUNT);
     console.log("Player 1 created game");
-    let resJoin = await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
+    await player2.join(res.game.gameParameters.gameCommitmentHash, Choice.ROCK, GAME_AMOUNT);
     console.log("Player 2 joined game");
     let gameRes = await player1.execute(player2.game.programUtxo);
     console.log("Game result: ", gameRes.gameResult);
