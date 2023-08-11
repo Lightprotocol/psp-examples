@@ -1,6 +1,10 @@
 # Rock-Paper-Scissors Game
 
-This is a TypeScript implementation of the classic game Rock-Paper-Scissors. The game is built on the Solana blockchain using the Anchor framework. It uses Light Protocol for privacy-preserving transactions.
+This is a TypeScript implementation of the classic game Rock-Paper-Scissors. The game is built on the Solana blockchain and is bootstrapped using the [Light CLI](https://www.npmjs.com/package/@lightprotocol/cli) (which also leverages the Anchor framework).  
+
+It uses [Light Protocol v3](https://github.com/Lightprotocol/light-protocol) for private state and state transitions. This allows the game to be played fully on-chain without the drawbacks of transparent game state (e.g. cheating by looking up the other player's choice or hand on-chain)
+
+This example also serves as a demonstration of how any kind of turn-based game can be implemented on Solana where a hybrid private/public game state becomes necessary.
 
 
 ## Game Logic
