@@ -24,9 +24,9 @@ export class MerkleTreeWithHistory {
 
   private _initialize() {
     for (let i = 0; i < this.levels; i++) {
-      this.filledSubtrees[i] = zeroValues[i];
+      this.filledSubtrees[i] = new BN(zeroValues[i]);
     }
-    this.root = zeroValues[this.levels];
+    this.root = new BN(zeroValues[this.levels]);
   }
 
   hashLeftRight(left: BN, right: BN): BN {
@@ -52,7 +52,7 @@ export class MerkleTreeWithHistory {
     for (let i = 0; i < this.levels; i++) {
       if (currentIndex % 2 === 0) {
         left = currentLevelHash;
-        right = zeroValues[i];
+        right = new BN(zeroValues[i]);
         this.filledSubtrees[i] = currentLevelHash;
       } else {
         left = this.filledSubtrees[i];
