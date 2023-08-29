@@ -6,7 +6,7 @@ import {
   TestRelayer,
   User,
 } from "@lightprotocol/zk.js";
-import BN from "bn.js";
+import {BN} from "@coral-xyz/anchor";
 
 process.env.ANCHOR_WALLET = process.env.HOME + "/.config/solana/id.json";
 process.env.ANCHOR_PROVIDER_URL = "http://127.0.0.1:8899";
