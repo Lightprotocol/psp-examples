@@ -1,9 +1,9 @@
 pragma circom 2.1.4;
-include "../node_modules/circomlib/circuits/poseidon.circom";
-include "../node_modules/@lightprotocol/zk.js/circuit-lib/merkleProof.circom";
-include "../node_modules/@lightprotocol/zk.js/circuit-lib/keypair.circom";
-include "../node_modules/circomlib/circuits/gates.circom";
-include "../node_modules/circomlib/circuits/comparators.circom";
+include "../../node_modules/circomlib/circuits/poseidon.circom";
+include "../../node_modules/@lightprotocol/zk.js/circuit-lib/merkleProof.circom";
+include "../../node_modules/@lightprotocol/zk.js/circuit-lib/keypair.circom";
+include "../../node_modules/circomlib/circuits/gates.circom";
+include "../../node_modules/circomlib/circuits/comparators.circom";
 
 
 template pspPaymentStreaming( levels, nIns, nOuts, feeAsset, indexFeeAsset, indexPublicAsset, nAssets, nInAssets, nOutAssets) {
@@ -213,6 +213,46 @@ instructionHasher.inputs[1] <== rate;
 /**
 * -------------------------- Application starts here --------------------------
 */
+ signal input attribute2;
+var utxoName = 1;
+component checkAmountSolUtxoName[utxoName][nIns];
+component checkAmountSplUtxoName[utxoName][nIns];
+component checkAssetSplUtxoName[utxoName][nIns];
+component checkAppDataHashUtxoName[utxoName][nIns];
+component checkUtxoDataAttribute2[utxoName][nIns];
+component instructionHasherUtxoName;
+component checkInstructionHashUtxoName[nIns];
+instructionHasherUtxoName = Poseidon(1);
+instructionHasherUtxoName.inputs[0] <== attribute2;
+for (var inUtxoIndex = 0; inUtxoIndex < nIns; inUtxoIndex++) {
+        checkInstructionHash[inUtxoIndex] = ForceEqualIfEnabled();
+        checkInstructionHash[inUtxoIndex].in[0] <== inAppDataHash[inUtxoIndex];
+        checkInstructionHash[inUtxoIndex].in[1] <== instructionHasherUtxoName.out;
+        checkInstructionHash[inUtxoIndex].enabled <== isAppInUtxoUtxoName[inUtxoIndex];
+}
+for (var i = 0; i < nIns; i++) {
+checkInAmountsHasherUtxoName[i] = ForceEqualIfEnabled();
+        checkInAmountsHasherUtxoName[i].in[0] <== inAmountsHasher[i].inputs[0];
+        checkInAmountsHasherUtxoName[i].in[1] <== sth;
+        checkInAmountsHasherUtxoName[i].enabled <== isAppUtxoUtxoName[i] * instruction;
+        checkInAppDataHashUtxoName[i] = ForceEqualIfEnabled();
+        checkInAppDataHashUtxoName[i].in[0] <== inAppDataHash[i];
+        checkInAppDataHashUtxoName[i].in[1] <== sth;
+        checkInAppDataHashUtxoName[i].enabled <== isAppUtxoUtxoName[i] * instruction;
+        checkInAmountsHasherUtxoName[i] = ForceEqualIfEnabled();
+        checkInAmountsHasherUtxoName[i].in[0] <== inAmountsHasher[i].inputs[1];
+        checkInAmountsHasherUtxoName[i].in[1] <== sth;
+        checkInAmountsHasherUtxoName[i].enabled <== isAppUtxoUtxoName[i] * instruction;
+        checkInCommitmentHasherUtxoName[i] = ForceEqualIfEnabled();
+        checkInCommitmentHasherUtxoName[i].in[0] <== inCommitmentHasher[i].inputs[4];
+        checkInCommitmentHasherUtxoName[i].in[1] <== sth;
+        checkInCommitmentHasherUtxoName[i].enabled <== isAppUtxoUtxoName[i] * instruction;
+        checkInUtxoDataAttribute2HasherUtxoName[i] = ForceEqualIfEnabled();
+        checkInUtxoDataAttribute2HasherUtxoName[i].in[0] <== inUtxoDataAttribute2Hasher[i].inputs[0];
+        checkInUtxoDataAttribute2HasherUtxoName[i].in[1] <== testComparison;
+        checkInUtxoDataAttribute2HasherUtxoName[i].enabled <== isAppUtxoUtxoName[i] * instruction;
+        }
+
 signal input currentSlotPrivate;
 signal input currentSlot;
 signal input diff;

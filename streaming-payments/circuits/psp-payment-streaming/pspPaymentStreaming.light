@@ -1,9 +1,9 @@
 pragma circom 2.1.4;
-include "../node_modules/circomlib/circuits/poseidon.circom";
-include "../node_modules/@lightprotocol/zk.js/circuit-lib/merkleProof.circom";
-include "../node_modules/@lightprotocol/zk.js/circuit-lib/keypair.circom";
-include "../node_modules/circomlib/circuits/gates.circom";
-include "../node_modules/circomlib/circuits/comparators.circom";
+include "../../node_modules/circomlib/circuits/poseidon.circom";
+include "../../node_modules/@lightprotocol/zk.js/circuit-lib/merkleProof.circom";
+include "../../node_modules/@lightprotocol/zk.js/circuit-lib/keypair.circom";
+include "../../node_modules/circomlib/circuits/gates.circom";
+include "../../node_modules/circomlib/circuits/comparators.circom";
 
 // will create a new instance of the circuit
 #[instance]
@@ -65,7 +65,7 @@ template pspPaymentStreaming() {
     // - instructionHasher.out
     var standardProgramUtxoPubkey = 0; //Poseidon(0);
     component checkRemainingAmount[nOuts][nOuts];
-    component checkInstructionHash[nOuts][nOuts];
+    component checkOutInstructionHash[nOuts][nOuts];
     component checkPublicAppVerifier[nOuts][nOuts];
 
     for(var i=0; i < nOuts; i++) {
@@ -75,10 +75,10 @@ template pspPaymentStreaming() {
             checkRemainingAmount[i][j].in[1] <== outAmount[i][0];
             checkRemainingAmount[i][j].enabled <== isOutUtxo[j];
 
-            checkInstructionHash[i][j] = ForceEqualIfEnabled();
-            checkInstructionHash[i][j].in[0] <== instructionHasher.out;
-            checkInstructionHash[i][j].in[1] <== outAppDataHash[i];
-            checkInstructionHash[i][j].enabled <== isOutUtxo[j];
+            checkOutInstructionHash[i][j] = ForceEqualIfEnabled();
+            checkOutInstructionHash[i][j].in[0] <== instructionHasher[0].out;
+            checkOutInstructionHash[i][j].in[1] <== outAppDataHash[i];
+            checkOutInstructionHash[i][j].enabled <== isOutUtxo[j];
 
             checkPublicAppVerifier[i][j] = ForceEqualIfEnabled();
             checkPublicAppVerifier[i][j].in[0] <== publicAppVerifier;
