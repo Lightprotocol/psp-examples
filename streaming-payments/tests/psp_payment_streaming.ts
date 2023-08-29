@@ -17,6 +17,7 @@ import {
   User,
   Utxo,
   MerkleTree,
+  ProgramParameters,
 } from "@lightprotocol/zk.js";
 import {
   Keypair as SolanaKeypair,
@@ -123,9 +124,11 @@ describe("Streaming Payments tests", () => {
         currentSlot: new BN(1),
         remainingAmount: new BN(0),
         isOutUtxo: [new BN(0), new BN(0), new BN(0), new BN(0)],
+        isAppInUtxo: [new BN(1), new BN(0), new BN(0), new BN(0)],
       },
       path: circuitPath,
       verifierIdl: IDL,
+      circuitName: "pspPaymentStreaming",
     };
 
     const txParams = new TransactionParameters({
@@ -267,6 +270,7 @@ describe("Streaming Payments tests", () => {
             },
             verifierIdl: IDL,
             path: circuitPath,
+            circuitName: "pspPaymentStreaming"
           };
 
           const index = merkleTree.indexOf(
@@ -306,6 +310,7 @@ describe("Streaming Payments tests", () => {
             },
             verifierIdl: IDL,
             path: circuitPath,
+            circuitName: "pspPaymentStreaming"
           };
           const inUtxo = this.latestStreamUtxo;
           const outUtxo = new Utxo({
@@ -327,11 +332,6 @@ describe("Streaming Payments tests", () => {
       }
     }
 
-    type ProgramParameters = {
-      verifierIdl: anchor.Idl;
-      inputs: any; // object of proof and other inputs
-      path: string;
-    };
     let client: PaymentStreamClient = new PaymentStreamClient(
       IDL,
       POSEIDON,
@@ -377,7 +377,7 @@ describe("Streaming Payments tests", () => {
     );
 
     await lightUser.executeAppUtxo({
-      appUtxo: inUtxo,
+      appUtxos: [inUtxo],
       programParameters,
       action,
       confirmOptions: ConfirmOptions.spendable,
