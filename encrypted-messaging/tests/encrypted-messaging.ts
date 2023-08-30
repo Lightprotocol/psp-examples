@@ -15,22 +15,21 @@ import {
   airdropSol,
   verifierProgramStorageProgramId,
   verifierProgramTwoProgramId,
-  ProgramParameters, merkleTreeProgramId, LOOK_UP_TABLE, AUTHORITY, MerkleTreeConfig
+  ProgramParameters,
+  merkleTreeProgramId,
+  LOOK_UP_TABLE,
+  AUTHORITY,
+  MerkleTreeConfig,
 } from "@lightprotocol/zk.js";
-import {
-  SystemProgram,
-  PublicKey,
-  Keypair
-} from "@solana/web3.js";
+import { SystemProgram, PublicKey, Keypair } from "@solana/web3.js";
 
 import { buildPoseidonOpt } from "circomlibjs";
 import { BN } from "@coral-xyz/anchor";
 import path from "path";
 import { MessageClient } from "./helpers";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import { IDL } from "../target/types/encrypted_messaging";
 const verifierProgramId = new PublicKey(
-  "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+  "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 );
 let POSEIDON: any;
 
@@ -43,34 +42,44 @@ describe("Test foobar", () => {
     POSEIDON = await buildPoseidonOpt();
   });
 
-  it.only("Test encrypted messaging", async () => {
-    const authorityPda = Transaction.getSignerAuthorityPda(merkleTreeProgramId, verifierProgramStorageProgramId);
-    const authorityBalance = await provider.connection.getBalance(authorityPda) / 1e9;
+  it("Test encrypted messaging", async () => {
+    const authorityPda = Transaction.getSignerAuthorityPda(
+      merkleTreeProgramId,
+      verifierProgramStorageProgramId
+    );
+    const authorityBalance =
+      (await provider.connection.getBalance(authorityPda)) / 1e9;
     console.log(`authorityPda balance: ${authorityBalance} SOL`);
 
     const wallet = await createWalletAndAirdropSol(provider, 1e10);
     const relayer = createRelayer(wallet);
 
-    let lightProvider = await LightProvider.init({ wallet, url: RPC_URL, relayer, confirmConfig: confirmConfig });
-    lightProvider.addVerifierProgramPublickeyToLookUpTable(TransactionParameters.getVerifierProgramId(IDL));
+    let lightProvider = await LightProvider.init({
+      wallet,
+      url: RPC_URL,
+      relayer,
+      confirmConfig: confirmConfig,
+    });
     const user: User = await User.init({ provider: lightProvider });
 
     let messageClient = new MessageClient(user);
 
     let seed = new Uint8Array(32).fill(1);
     let encodedSeed = bs58.encode(seed);
-    let recipient = await User.init({
+    let recipient = (await User.init({
       provider: lightProvider,
       seed: encodedSeed,
-    }) as User;
+    })) as User;
 
-    await messageClient.encryptAndStoreForRecipient("foobaz", recipient.account.encryptionKeypair.publicKey);
+    await messageClient.encryptAndStoreForRecipient(
+      "foobaz",
+      recipient.account.encryptionKeypair.publicKey
+    );
 
     const recipientMessageClient = new MessageClient(recipient);
-    await recipientMessageClient.getMessages();    
+    await recipientMessageClient.getMessages();
   });
 });
-
 
 function setupAnchor(): anchor.AnchorProvider {
   process.env.ANCHOR_PROVIDER_URL = RPC_URL;
@@ -81,7 +90,10 @@ function setupAnchor(): anchor.AnchorProvider {
   return provider;
 }
 
-async function createWalletAndAirdropSol(provider: anchor.AnchorProvider, amount: number): Promise<Keypair> {
+async function createWalletAndAirdropSol(
+  provider: anchor.AnchorProvider,
+  amount: number
+): Promise<Keypair> {
   const wallet = Keypair.generate();
   await airdropSol({
     connection: provider.connection,
@@ -99,4 +111,3 @@ function createRelayer(wallet: Keypair): TestRelayer {
     payer: wallet,
   });
 }
-
