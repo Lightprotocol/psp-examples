@@ -16,7 +16,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub const PROGRAM_ID: &str = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS";
 
 #[program]
-pub mod rock_paper_scissors {
+pub mod swap {
     use light_verifier_sdk::light_transaction::{Amounts, Proof};
 
     use super::*;
@@ -89,10 +89,10 @@ pub mod rock_paper_scissors {
         if reversed_public_inputs
             != ctx
                 .accounts
-                .game_pda
-                .game
-                .player_one_program_utxo
-                .gameCommitmentHash
+                .swap_pda
+                .swap
+                .swap_maker_program_utxo
+                .swapCommitmentHash
                 .x
         {
             for (idx, val) in ctx
@@ -109,10 +109,10 @@ pub mod rock_paper_scissors {
             msg!(
                 "{:?}",
                 ctx.accounts
-                    .game_pda
-                    .game
-                    .player_one_program_utxo
-                    .gameCommitmentHash
+                    .swap_pda
+                    .swap
+                    .swap_maker_program_utxo
+                    .swapCommitmentHash
             );
             panic!("player_one_program_utxo does not match");
         }
@@ -121,24 +121,24 @@ pub mod rock_paper_scissors {
         if reversed_public_inputs
             != ctx
                 .accounts
-                .game_pda
-                .game
-                .player_two_program_utxo
+                .swap_pda
+                .swap
+                .swap_taker_program_utxo
                 .unwrap()
-                .gameCommitmentHash
+                .swapCommitmentHash
                 .x
         {
             msg!("{:?}", ctx.accounts.verifier_state.checked_public_inputs);
             msg!(
                 "{:?}",
                 ctx.accounts
-                    .game_pda
-                    .game
-                    .player_two_program_utxo
+                    .swap_pda
+                    .swap
+                    .swap_taker_program_utxo
                     .unwrap()
-                    .gameCommitmentHash
+                    .swapCommitmentHash
             );
-            panic!("player_two_program_utxo does not match");
+            panic!("swap_maker_program_utxo does not match");
         }
         verify_programm_proof(&ctx, &inputs)?;
         cpi_verifier_two(&ctx, &inputs)
@@ -151,17 +151,17 @@ pub mod rock_paper_scissors {
         Ok(())
     }
 
-    pub fn create_game<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, CreateGameInstruction<'info>>,
+    pub fn create_swap<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, CreateSwapInstruction<'info>>,
         utxo_bytes: Vec<u8>,
     ) -> Result<()> {
         let utxo = UtxoInternal::deserialize(&mut utxo_bytes.as_slice())?;
         msg!(
-            "gameCommitmentHash {:?}",
-            utxo.gameCommitmentHash.x.as_slice()
+            "swapCommitmentHash {:?}",
+            utxo.swapCommitmentHash.x.as_slice()
         );
         let gch: [u8; 32] = utxo
-            .gameCommitmentHash
+            .swapCommitmentHash
             .x
             .as_slice()
             .try_into()
@@ -169,26 +169,24 @@ pub mod rock_paper_scissors {
 
         msg!("gch as [u8;32] = {:?}", gch);
 
-        let res = anchor_lang::prelude::Pubkey::find_program_address(
-            // &[b"game_pda"],
-            &[&gch],
-            ctx.program_id,
-        )
-        .0;
+        let res = anchor_lang::prelude::Pubkey::find_program_address(&[&gch], ctx.program_id).0;
         msg!("find_program_address {:?}", utxo);
 
-        ctx.accounts.game_pda.game = Game::new(utxo.try_into().unwrap());
+        ctx.accounts.swap_pda.swap = Swap::new(utxo.try_into().unwrap());
         Ok(())
     }
 
-    pub fn join_game<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, JoinGameInstruction<'info>>,
+    pub fn join_swap<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, JoinSwapInstruction<'info>>,
         utxo_bytes: Vec<u8>,
-        choice: u8,
         slot: u64,
     ) -> Result<()> {
         let utxo: UtxoInternal = UtxoInternal::deserialize(&mut utxo_bytes.as_slice())?;
-        ctx.accounts.game_pda.game.join(utxo, choice, slot);
+        ctx.accounts.swap_pda.swap.join(utxo, slot);
+        Ok(())
+    }
+
+    pub fn close_swap(_ctx: Context<CloseSwap>) -> Result<()> {
         Ok(())
     }
 }

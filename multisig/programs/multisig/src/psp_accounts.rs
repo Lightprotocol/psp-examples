@@ -1,5 +1,4 @@
 use crate::processor::TransactionsConfig;
-use crate::u256;
 use anchor_lang::prelude::*;
 use anchor_spl::token::Token;
 use light_verifier_sdk::{light_transaction::VERIFIER_STATE_SEED, state::VerifierState10Ins};
@@ -7,6 +6,7 @@ use merkle_tree_program::transaction_merkle_tree::state::TransactionMerkleTree;
 use merkle_tree_program::utils::constants::TOKEN_AUTHORITY_SEED;
 use merkle_tree_program::{program::MerkleTreeProgram, EventMerkleTree};
 use verifier_program_two::{self, program::VerifierProgramTwo};
+
 // Send and stores data.
 #[derive(Accounts)]
 pub struct LightInstructionFirst<'info, const NR_CHECKED_INPUTS: usize> {
@@ -53,7 +53,7 @@ pub struct LightInstructionThird<'info, const NR_CHECKED_INPUTS: usize> {
     #[account(mut)]
     pub transaction_merkle_tree: AccountLoader<'info, TransactionMerkleTree>,
     /// CHECK: This is the cpi authority and will be enforced in the Merkle tree program.
-    #[account(mut, seeds = [MerkleTreeProgram::id().to_bytes().as_ref()], bump, seeds::program= VerifierProgramTwo::id())]
+    #[account(mut, seeds= [MerkleTreeProgram::id().to_bytes().as_ref()], bump, seeds::program= VerifierProgramTwo::id())]
     pub authority: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
     /// CHECK:` Is checked depending on deposit or withdrawal.
@@ -82,92 +82,6 @@ pub struct LightInstructionThird<'info, const NR_CHECKED_INPUTS: usize> {
     pub log_wrapper: UncheckedAccount<'info>,
     #[account(mut)]
     pub event_merkle_tree: AccountLoader<'info, EventMerkleTree>,
-    #[account(mut), close=signer]
-    pub game_pda: Box<Account<'info, GamePda>>,
-}
-
-// const GAME_PDA_SEED: &[u8] = b"game_pda";
-// &utxo.gameCommitmentHash.x.as_slice(),
-
-#[allow(non_snake_case)]
-#[derive(Accounts)]
-#[instruction(game_commitment_hash: Vec<u8>)]
-pub struct CreateGameInstruction<'info> {
-    #[account(mut)]
-    pub signer: Signer<'info>,
-    #[allow(non_snake_case)]
-    #[account(
-        init,
-        seeds = [&game_commitment_hash[game_commitment_hash.len()-64..game_commitment_hash.len()-32]],
-        // seeds = [GAME_PDA_SEED],
-        bump,
-        payer = signer,
-        space = 3000)
-    ]
-    pub game_pda: Account<'info, GamePda>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct JoinGameInstruction<'info> {
-    #[account(mut)]
-    pub signer: Signer<'info>,
-    // #[allow(non_snake_case)]
-    #[account(mut)]
-    pub game_pda: Account<'info, GamePda>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Debug)]
-#[account]
-pub struct GamePda {
-    pub game: Game,
-}
-
-#[allow(non_snake_case)]
-#[derive(Debug, Copy, AnchorDeserialize, AnchorSerialize, PartialEq, Clone)]
-pub struct UtxoInternal {
-    pub amounts: [u64; 2],
-    pub spl_asset_index: u64,
-    pub verifier_address_index: u64,
-    pub blinding: u256,
-    pub app_data_hash: u256,
-    pub account_shielded_public_key: u256,
-    pub account_encryption_public_key: [u8; 32],
-    pub gameCommitmentHash: u256,
-    pub userPubkey: u256,
-}
-
-#[derive(Debug, AnchorDeserialize, AnchorSerialize, Clone)]
-pub struct Game {
-    pub player_one_program_utxo: UtxoInternal,
-    pub player_two_program_utxo: Option<UtxoInternal>,
-    pub player_two_choice: Option<u8>,
-    _padding: [u8; 7],
-    pub slot: Option<u64>,
-    pub is_joinable: bool,
-    pub _padding2: [u8; 7],
-}
-
-impl Game {
-    pub fn new(player_one_program_utxo: UtxoInternal) -> Self {
-        Self {
-            player_one_program_utxo,
-            player_two_program_utxo: None,
-            slot: None,
-            player_two_choice: None,
-            _padding: [0u8; 7],
-            is_joinable: true,
-            _padding2: [0u8; 7],
-        }
-    }
-
-    pub fn join(&mut self, player_two_program_utxo: UtxoInternal, choice: u8, slot: u64) {
-        self.player_two_program_utxo = Some(player_two_program_utxo);
-        self.is_joinable = false;
-        self.player_two_choice = Some(choice);
-        self.slot = Some(slot);
-    }
 }
 
 #[derive(Debug)]
@@ -187,4 +101,60 @@ pub struct CloseVerifierState<'info, const NR_CHECKED_INPUTS: usize> {
     pub signing_address: Signer<'info>,
     #[account(mut, seeds = [&signing_address.key().to_bytes(), VERIFIER_STATE_SEED], bump, close=signing_address )]
     pub verifier_state: Account<'info, VerifierState10Ins<NR_CHECKED_INPUTS, TransactionsConfig>>,
+}
+
+// /// Multisig parameters which are not part of the zero-knowledge proof.
+// #[account]
+// pub struct MultiSigParameters {
+//     pub encryptionPubkeysSigners: [[u8; 32]; 7],
+// }
+
+// not necessary because will make this a utils function of the storage verifier
+/// encrypted multisig parameters
+/// space = 8 (discriminator) + 7 * 32 + 32 + 458 = 722
+/// nonces are Sha3(base_nonce||counter), aes256 iv: counter = 8
+// #[account]
+// pub struct EncryptedMultiSigParameters {
+//     // length [48; 7]
+//     encryptedAesSecretKey: Vec<Vec<u8>>,
+//     base_nonce: [u8; 32],
+//     aesCipherText: [u8; 512],
+// }
+
+// #[derive(Default, Copy)]
+// #[account]
+// pub struct Utxo {
+//     publicKey: [u8; 32],
+//     blinding: [u8; 31],
+//     appData: UtxoAppData,
+// }
+
+// TODO: check how the solana transaction sig hash is calculated
+// it should hash the complete transaction then we can omit any auth encryption
+// storage verifier client
+// - encryptToNaclBox({recipientsPubkeys[], msg, aesSecret})
+// - encryptAes(aesSecret, message)
+// - store(msg)
+// - getNaclBoxEncrypted()
+// - getAesEncrypted()
+// - getAllMessages()
+
+#[account]
+pub struct CreateMultiSig {
+    pub seed: [u8; 32],
+    pub public_key_x: [[u8; 32]; 7],
+    pub public_key_y: [[u8; 32]; 7],
+    pub threshold: u8,
+    pub nr_signers: u8,
+    pub signers_encryption_public_keys: [[u8; 32]; 7],
+    // if update point to the multisig which is being updated
+    pub prior_multi_sig_slot: u64,
+    pub prior_multi_sig_hash: [u8; 32],
+    pub prior_multi_sig_seed: [u8; 32],
+}
+
+#[account]
+pub struct ApproveTransaction {
+    signer_index: u8,
+    signature: [u8; 64],
 }

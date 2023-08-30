@@ -82,46 +82,53 @@ pub struct LightInstructionThird<'info, const NR_CHECKED_INPUTS: usize> {
     pub log_wrapper: UncheckedAccount<'info>,
     #[account(mut)]
     pub event_merkle_tree: AccountLoader<'info, EventMerkleTree>,
-    #[account(mut), close=signer]
-    pub game_pda: Box<Account<'info, GamePda>>,
+    #[account(mut)]
+    pub swap_pda: Box<Account<'info, SwapPda>>,
 }
-
-// const GAME_PDA_SEED: &[u8] = b"game_pda";
-// &utxo.gameCommitmentHash.x.as_slice(),
 
 #[allow(non_snake_case)]
 #[derive(Accounts)]
-#[instruction(game_commitment_hash: Vec<u8>)]
-pub struct CreateGameInstruction<'info> {
+#[instruction(swap_commitment_hash: Vec<u8>)]
+pub struct CreateSwapInstruction<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[allow(non_snake_case)]
     #[account(
         init,
-        seeds = [&game_commitment_hash[game_commitment_hash.len()-64..game_commitment_hash.len()-32]],
-        // seeds = [GAME_PDA_SEED],
+        seeds = [&swap_commitment_hash[swap_commitment_hash.len()-64..swap_commitment_hash.len()-32]],
         bump,
         payer = signer,
         space = 3000)
     ]
-    pub game_pda: Account<'info, GamePda>,
+    pub swap_pda: Account<'info, SwapPda>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
-pub struct JoinGameInstruction<'info> {
+pub struct CloseSwap<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    #[account(
+        mut,
+        close=signer
+    )]
+    pub swap_pda: Account<'info, SwapPda>,
+}
+
+#[derive(Accounts)]
+pub struct JoinSwapInstruction<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     // #[allow(non_snake_case)]
     #[account(mut)]
-    pub game_pda: Account<'info, GamePda>,
+    pub swap_pda: Account<'info, SwapPda>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Debug)]
 #[account]
-pub struct GamePda {
-    pub game: Game,
+pub struct SwapPda {
+    pub swap: Swap,
 }
 
 #[allow(non_snake_case)]
@@ -134,38 +141,35 @@ pub struct UtxoInternal {
     pub app_data_hash: u256,
     pub account_shielded_public_key: u256,
     pub account_encryption_public_key: [u8; 32],
-    pub gameCommitmentHash: u256,
+    pub swapCommitmentHash: u256,
     pub userPubkey: u256,
 }
 
 #[derive(Debug, AnchorDeserialize, AnchorSerialize, Clone)]
-pub struct Game {
-    pub player_one_program_utxo: UtxoInternal,
-    pub player_two_program_utxo: Option<UtxoInternal>,
-    pub player_two_choice: Option<u8>,
+pub struct Swap {
+    pub swap_maker_program_utxo: UtxoInternal,
+    pub swap_taker_program_utxo: Option<UtxoInternal>,
     _padding: [u8; 7],
     pub slot: Option<u64>,
     pub is_joinable: bool,
     pub _padding2: [u8; 7],
 }
 
-impl Game {
-    pub fn new(player_one_program_utxo: UtxoInternal) -> Self {
+impl Swap {
+    pub fn new(swap_maker_program_utxo: UtxoInternal) -> Self {
         Self {
-            player_one_program_utxo,
-            player_two_program_utxo: None,
+            swap_maker_program_utxo,
+            swap_taker_program_utxo: None,
             slot: None,
-            player_two_choice: None,
             _padding: [0u8; 7],
             is_joinable: true,
             _padding2: [0u8; 7],
         }
     }
 
-    pub fn join(&mut self, player_two_program_utxo: UtxoInternal, choice: u8, slot: u64) {
-        self.player_two_program_utxo = Some(player_two_program_utxo);
+    pub fn join(&mut self, swap_taker_program_utxo: UtxoInternal, slot: u64) {
+        self.swap_taker_program_utxo = Some(swap_taker_program_utxo);
         self.is_joinable = false;
-        self.player_two_choice = Some(choice);
         self.slot = Some(slot);
     }
 }
