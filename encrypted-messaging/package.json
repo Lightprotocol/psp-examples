@@ -2,8 +2,7 @@
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
-    "test": "light psp:test encrypted-messaging Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
-    "build": "light psp:build encrypted-messaging"
+    "test": "light test-validator -b && yarn ts-mocha ./tests/encrypted-messaging.ts -t 100000 --exit"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.28.0",
