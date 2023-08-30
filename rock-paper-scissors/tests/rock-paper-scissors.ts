@@ -12,7 +12,8 @@ import {
   FIELD_SIZE,
   Relayer,
   Account,
-  sendVersionedTransactions
+  sendVersionedTransactions,
+  ConfirmOptions
 } from "@lightprotocol/zk.js";
 import {
   SystemProgram,
@@ -317,13 +318,14 @@ class Player {
         isPlayer2OutUtxo:[
           [BN_ZERO, BN_ONE, BN_ZERO, BN_ZERO],
         ],
-        ...winner
+        ...winner,
       },
       verifierIdl: IDL,
       path: circuitPath,
       accounts: {
         gamePda: this.game.pda,
-      }
+      },
+      circuitName: "rockPaperScissors"
     };
     const amounts = this.getAmounts(winner.winner);
     const player1OutUtxo = new Utxo({
@@ -357,7 +359,8 @@ class Player {
       programParameters,
       action: Action.TRANSFER,
       addOutUtxos: true,
-      shuffleEnabled: false
+      shuffleEnabled: false,
+      confirmOptions: ConfirmOptions.spendable
     });
 
     return {txHash, gameResult: winner.winner};

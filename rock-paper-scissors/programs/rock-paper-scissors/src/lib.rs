@@ -7,8 +7,8 @@ pub mod auto_generated_accounts;
 pub use auto_generated_accounts::*;
 pub mod processor;
 pub use processor::*;
-pub mod verifying_key;
-pub use verifying_key::*;
+pub mod verifying_key_rock_paper_scissors;
+pub use verifying_key_rock_paper_scissors::*;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -168,13 +168,6 @@ pub mod rock_paper_scissors {
             .expect("slice with incorrect length");
 
         msg!("gch as [u8;32] = {:?}", gch);
-
-        let res = anchor_lang::prelude::Pubkey::find_program_address(
-            // &[b"game_pda"],
-            &[&gch],
-            ctx.program_id,
-        )
-        .0;
         msg!("find_program_address {:?}", utxo);
 
         ctx.accounts.game_pda.game = Game::new(utxo.try_into().unwrap());

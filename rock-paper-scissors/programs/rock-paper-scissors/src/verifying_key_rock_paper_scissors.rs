@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use groth16_solana::groth16::Groth16Verifyingkey;
 
-pub const VERIFYINGKEY: Groth16Verifyingkey = Groth16Verifyingkey {
-    nr_pubinputs: 5,
+pub const VERIFYINGKEY_ROCK_PAPER_SCISSORS: Groth16Verifyingkey = Groth16Verifyingkey {
+    nr_pubinputs: 4,
     vk_alpha_g1: [
         45, 77, 154, 167, 227, 2, 217, 223, 65, 116, 157, 85, 7, 148, 157, 5, 219, 234, 51, 251,
         177, 108, 100, 59, 34, 245, 153, 162, 190, 109, 242, 226, 20, 190, 221, 80, 60, 55, 206,
@@ -31,13 +31,13 @@ pub const VERIFYINGKEY: Groth16Verifyingkey = Groth16Verifyingkey {
     ],
 
     vk_delta_g2: [
-        22, 19, 93, 234, 194, 245, 181, 18, 77, 175, 30, 100, 150, 138, 195, 223, 63, 212, 71, 84,
-        200, 57, 13, 205, 142, 242, 143, 220, 187, 137, 50, 2, 11, 228, 243, 227, 204, 44, 16, 108,
-        82, 210, 161, 93, 28, 84, 243, 37, 97, 247, 78, 151, 199, 116, 5, 165, 151, 9, 160, 118,
-        189, 173, 77, 179, 23, 196, 102, 180, 82, 62, 30, 229, 228, 132, 186, 169, 171, 248, 92,
-        227, 106, 29, 12, 126, 147, 254, 107, 11, 100, 95, 218, 35, 144, 184, 60, 9, 47, 205, 44,
-        183, 203, 90, 16, 95, 195, 146, 115, 112, 157, 188, 88, 215, 104, 154, 203, 112, 60, 225,
-        16, 72, 144, 142, 21, 38, 24, 27, 160, 232,
+        39, 250, 233, 33, 199, 112, 166, 209, 13, 98, 40, 106, 238, 249, 244, 46, 39, 220, 43, 238,
+        150, 156, 239, 192, 81, 187, 61, 114, 172, 60, 71, 35, 38, 4, 152, 160, 73, 195, 246, 207,
+        40, 193, 64, 160, 86, 7, 167, 115, 106, 5, 222, 229, 66, 62, 246, 149, 63, 52, 184, 178,
+        128, 73, 27, 162, 3, 44, 188, 229, 10, 75, 182, 148, 114, 176, 218, 156, 143, 183, 41, 111,
+        134, 202, 188, 127, 145, 62, 149, 88, 104, 194, 84, 74, 176, 31, 203, 66, 13, 104, 10, 183,
+        238, 67, 182, 6, 162, 131, 77, 116, 42, 142, 131, 131, 38, 119, 154, 225, 167, 168, 114,
+        113, 228, 85, 41, 252, 124, 202, 223, 186,
     ],
 
     vk_ic: &[
@@ -74,7 +74,7 @@ pub const VERIFYINGKEY: Groth16Verifyingkey = Groth16Verifyingkey {
     ],
 };
 #[account]
-pub struct ZKrockPaperScissorsMainProofInputs {
+pub struct ZKrockPaperScissorsProofInputs {
     public_app_verifier: u8,
     transaction_hash: u8,
     public_game_commitment0: u8,
@@ -109,9 +109,16 @@ pub struct ZKrockPaperScissorsMainProofInputs {
     is_player2_out_utxo: [u8; 4],
 }
 #[account]
-pub struct ZKrockPaperScissorsMainPublicInputs {
+pub struct ZKrockPaperScissorsPublicInputs {
     public_app_verifier: u8,
     transaction_hash: u8,
     public_game_commitment0: u8,
     public_game_commitment1: u8,
+}
+#[account]
+pub struct InstructionDataLightInstructionRockPaperScissorsSecond {
+    public_app_verifier: [u8; 32],
+    transaction_hash: [u8; 32],
+    public_game_commitment0: [u8; 32],
+    public_game_commitment1: [u8; 32],
 }
