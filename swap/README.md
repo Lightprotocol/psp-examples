@@ -1,33 +1,8 @@
-# Rock-Paper-Scissors Game
+# Swap 
 
-This is a TypeScript implementation of the classic game Rock-Paper-Scissors. The game is built on the Solana blockchain and is bootstrapped using the [Light CLI](https://www.npmjs.com/package/@lightprotocol/cli) (which also leverages the Anchor framework).  
+This is a TypeScript implementation of the private swap. This example is built on the Solana blockchain and is bootstrapped using the [Light CLI](https://www.npmjs.com/package/@lightprotocol/cli) (which also leverages the Anchor framework).  
 
-It uses [Light Protocol v3](https://github.com/Lightprotocol/light-protocol) for private state and state transitions. This allows the game to be played fully on-chain without the drawbacks of transparent game state (e.g. cheating by looking up the other player's choice or hand on-chain)
-
-This example also serves as a demonstration of how any kind of turn-based game can be implemented on Solana where a hybrid private/public game state becomes necessary.
-
-
-## Game Logic
-
-The game logic is encapsulated in the Game and Player classes.
-
-- Game class: This class represents a single game of Rock-Paper-Scissors. It includes methods for creating a game, joining a game, and determining the winner of a game.
-
-- Player class: This class represents a player in the game. It includes methods for initializing a player, creating a game, joining a game, executing a game, and closing a game PDA.
-
-## Game Flow
-
-1. Player 1 creates a game by choosing Rock, Paper, or Scissors and the amount of Solana tokens to bet.
-
-2. Player 2 joins the game by providing the game commitment hash, their choice (Rock, Paper, or Scissors), and the same amount of Solana tokens.
-
-3. The game is executed, and the winner is determined based on the classic Rock-Paper-Scissors rules.
-
-4. The game is closed, and the winner receives the total bet amount.
-
-## Test Cases
-
-The code includes test cases for the three possible outcomes of a game: Player 1 wins, Player 2 wins, or a draw.
+It uses [Light Protocol v3](https://github.com/Lightprotocol/light-protocol) for private state and state transitions. This allows the swaps to be executed fully on-chain.
 
 ## Prerequisites
 
