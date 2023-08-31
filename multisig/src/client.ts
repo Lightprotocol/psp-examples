@@ -16,6 +16,7 @@ import {
   MerkleTreeConfig,
   verifierProgramTwoProgramId,
   IDL_VERIFIER_PROGRAM_TWO,
+  updateMerkleTreeForTest,
 } from "@lightprotocol/zk.js";
 import { MultiSig } from "./multisigParams";
 import { Scalar } from "ffjavascript";
@@ -27,7 +28,7 @@ import {
 } from "@solana/web3.js";
 // import { MERKLE_TREE_KEY } from "light-sdk";
 // import { MockVerifier } from "./verifier";
-
+const path = require("path");
 import { IDL, Multisig as MultisigProgram } from "../target/types/multisig";
 
 import { verifierProgramId, MAX_SIGNERS } from "./constants";
@@ -90,12 +91,22 @@ export class MultiSigClient {
   // getQueuedTransactions()
 
   async approve(index: number) {
-    let tx = new Transaction({
-      provider: this.provider,
-      shuffleEnabled: false,
-      params: this.queuedTransactions[index].transactionParams,
-      appParams: { mock: "1231" },
-    });
+    // let tx = new Transaction({
+    //   provider: this.provider,
+    //   shuffleEnabled: false,
+    //   params: this.queuedTransactions[index].transactionParams,
+    //   appParams: { mock: "1231" },
+    // });
+    // await tx.compile();
+
+    Transaction.getMerkleProofs(
+      this.provider,
+      this.queuedTransactions[index].transactionParams.inputUtxos
+    );
+    const integrityHash = await this.queuedTransactions[
+      index
+    ].transactionParams.getTxIntegrityHash(this.poseidon);
+
     const connectingHash = Transaction.getTransactionHash(
       this.queuedTransactions[index].transactionParams,
       this.poseidon
@@ -181,6 +192,19 @@ export class MultiSigClient {
     splAmount?: BN;
     solAmount?: BN;
   }) {
+    const appData = {
+      threshold: this.multiSigParams.threshold,
+      nrSigners: this.multiSigParams.nrSigners,
+      publicKeyX: this.multiSigParams.publicKeyX.map(
+        (s) => new BN(this.poseidon.F.toString(s))
+      ),
+      publicKeyY: this.multiSigParams.publicKeyY.map(
+        (s) => new BN(this.poseidon.F.toString(s))
+      ),
+    };
+
+    console.log("appData: ", appData);
+
     if (splAmount && splAsset) {
       var realSolAmount = new BN(0);
       if (solAmount) {
@@ -191,7 +215,7 @@ export class MultiSigClient {
         assets: [SystemProgram.programId, splAsset],
         account: this.multiSigParams.account,
         amounts: [realSolAmount, splAmount],
-        appData: this.multiSigParams,
+        appData,
         appDataIdl: IDL,
         verifierAddress: verifierProgramId,
         assetLookupTable: this.provider.lookUpTables.assetLookupTable,
@@ -204,7 +228,7 @@ export class MultiSigClient {
         assets: [SystemProgram.programId, SystemProgram.programId],
         account: this.multiSigParams.account,
         amounts: [solAmount, new BN(0)],
-        appData: this.multiSigParams,
+        appData,
         appDataIdl: IDL,
         verifierAddress: verifierProgramId,
         assetLookupTable: this.provider.lookUpTables.assetLookupTable,
@@ -291,6 +315,7 @@ export class MultiSigClient {
       );
     }
 
+    const circuitPath = path.join("build-circuit");
     const appParams = {
       inputs: {
         threshold: this.multiSigParams.threshold.toString(),
@@ -317,6 +342,8 @@ export class MultiSigClient {
           (approval) => this.eddsa.unpackSignature(approval.signature).S
         ),
       },
+      verifierIdl: IDL,
+      path: circuitPath,
     };
     return appParams;
   }
@@ -334,20 +361,24 @@ export class MultiSigClient {
     });
     // TODO: remove when we have relayer only for testing
     // txParams.payer = ADMIN_AUTH_KEYPAIR;
-    await tx.compile();
-    await tx.provider.provider.connection.confirmTransaction(
-      await tx.provider.provider.connection.requestAirdrop(
-        tx.params.accounts.authority,
-        1_000_000_000
-      ),
-      "confirmed"
-    );
-    await tx.getProof();
-    await tx.getAppProof();
+
+    await tx.compileAndProve();
     await tx.sendAndConfirmTransaction();
 
+    // await tx.compile();
+    // await tx.provider.provider.connection.confirmTransaction(
+    //   await tx.provider.provider.connection.requestAirdrop(
+    //     tx.params.accounts.authority,
+    //     1_000_000_000
+    //   ),
+    //   "confirmed"
+    // );
+    // await tx.getProof();
+    // await tx.getAppProof();
+    // await tx.sendAndConfirmTransaction();
+
     // await tx.checkBalances();
-    // await updateMerkleTreeForTest(provider)
+    await updateMerkleTreeForTest(ADMIN_AUTH_KEYPAIR, this.provider.url);
   }
 }
 

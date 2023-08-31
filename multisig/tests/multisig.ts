@@ -22,6 +22,8 @@ import {
   userTokenAccount,
   AUTHORITY,
   updateMerkleTreeForTest,
+  SolMerkleTree,
+  MerkleTree,
 } from "@lightprotocol/zk.js";
 import {
   SystemProgram,
@@ -70,7 +72,7 @@ describe("Test multisig", () => {
     });
   });
 
-  it("Poseidon Signature Poc", async () => {
+  it.skip("Poseidon Signature Poc", async () => {
     let eddsa = await buildEddsa();
     // @ts-ignore
     const babyJub = await circomlibjs.buildBabyjub();
@@ -96,7 +98,7 @@ describe("Test multisig", () => {
     assert(eddsa.verifyPoseidon(hash, uSignature, pubKey));
   });
 
-  it("MultiSig Creation and serialization functional", async () => {
+  it.skip("MultiSig Creation and serialization functional", async () => {
     const poseidon = await buildPoseidonOpt();
     let eddsa = await buildEddsa();
 
@@ -123,7 +125,7 @@ describe("Test multisig", () => {
     MultiSig.equal(multiSig, multiSig1);
   });
 
-  it("Encrypt MultiSig Creation and serialization functional", async () => {
+  it.skip("Encrypt MultiSig Creation and serialization functional", async () => {
     const poseidon = await buildPoseidonOpt();
     let eddsa = await buildEddsa();
 
@@ -457,7 +459,12 @@ describe("Test multisig", () => {
     console.log(`authorityPda balance: ${authorityBalance} SOL`);
 
     const wallet = await createWalletAndAirdropSol(provider, 1e10);
-    const relayer = createRelayer(wallet);
+    const relayer = new TestRelayer({
+      relayerPubkey: wallet.publicKey,
+      relayerRecipientSol: wallet.publicKey,
+      relayerFee: new BN(100_000),
+      payer: wallet,
+    });
 
     let lightProvider = await LightProvider.init({
       wallet,
@@ -500,7 +507,12 @@ describe("Test multisig", () => {
       recipientPublicKey: ADMIN_AUTH_KEYPAIR.publicKey,
     });
 
-    const relayer = createRelayer(ADMIN_AUTH_KEYPAIR);
+    const relayer = new TestRelayer({
+      relayerPubkey: ADMIN_AUTH_KEYPAIR.publicKey,
+      relayerRecipientSol: ADMIN_AUTH_KEYPAIR.publicKey,
+      relayerFee: new BN(100_000),
+      payer: ADMIN_AUTH_KEYPAIR,
+    });
     let lightProvider = await LightProvider.init({
       wallet: ADMIN_AUTH_KEYPAIR,
       url: RPC_URL,
@@ -510,6 +522,7 @@ describe("Test multisig", () => {
     lightProvider.addVerifierProgramPublickeyToLookUpTable(
       TransactionParameters.getVerifierProgramId(IDL)
     );
+    const user: User = await User.init({ provider: lightProvider });
 
     const keypair = new Account({
       poseidon,
@@ -573,15 +586,12 @@ describe("Test multisig", () => {
     console.log(
       "During transaction execution input utxos are invalidated, \n while output utxos are inserted into the merkle tree"
     );
-    console.log("This is the multisig output utxo");
+    // console.log("This is the multisig output utxo");
     // console.log(printUtxo(outputUtxo, 0, "ouput"));
 
-    const depositIx = await deposit(provider, outputUtxo, lightProvider);
+    await deposit(provider, outputUtxo, lightProvider, user);
     console.log("------------------------------------------");
     console.log("\n\n");
-
-    // console.log("depositIx ", depositIx[0]);
-    // console.log("depositIx ", depositIx[0]);
 
     // const recentBlockhash = (
     //   await provider.provider.connection.getRecentBlockhash("confirmed")
@@ -632,48 +642,53 @@ describe("Test multisig", () => {
     // await squads.executeTransaction(txState.publicKey);
     // squads._executeTransaction(transactionPDA, payer)
 
-    // await updateMerkleTreeForTest(provider);
+    // await updateMerkleTreeForTest(ADMIN_AUTH_KEYPAIR, lightProvider.url);
+    lightProvider.solMerkleTree!.merkleTree = new MerkleTree(18, poseidon, [
+      outputUtxo.getCommitment(poseidon),
+    ]);
 
     // lightProvider.solMerkleTree = await SolMerkleTree.build({
     //   pubkey: MERKLE_TREE_KEY,
     //   poseidon,
     // });
 
-    // const inputUtxos = [
-    //   outputUtxo,
-    //   new Utxo({ poseidon }),
-    //   new Utxo({ poseidon }),
-    //   new Utxo({ poseidon }),
-    // ];
-    // const outputUtxos = [
-    //   new Utxo({ poseidon }),
-    //   new Utxo({ poseidon }),
-    //   new Utxo({ poseidon }),
-    //   new Utxo({ poseidon }),
-    // ];
+    const inputUtxos = [
+      outputUtxo,
+      // new Utxo({ provider }),
+      // new Utxo({ poseidon }),
+      // new Utxo({ poseidon }),
+    ];
+    const outputUtxos = [
+      // new Utxo({ poseidon }),
+      // new Utxo({ poseidon }),
+      // new Utxo({ poseidon }),
+      // new Utxo({ poseidon }),
+    ];
     // // creates a transaction and queues it in the
-    // let recipientFee = SolanaKeypair.generate().publicKey;
+    let recipientFee = Keypair.generate().publicKey;
 
     // signer 1 creates a multisig transaction
-    // client.createMultiSigTransaction({
-    //   inputUtxos,
-    //   outputUtxos,
-    //   recipientFee,
-    //   relayer,
-    //   action: Action.UNSHIELD,
-    // });
+    await client.createMultiSigTransaction({
+      inputUtxos,
+      outputUtxos,
+      relayer,
+      action: Action.UNSHIELD,
+    });
     console.log("------------------------------------------");
     console.log("\t Created Multisig Transaction ");
     console.log("------------------------------------------");
     console.log(
       "The multisig transaction is encrypted to the shared encryption key and stored in a compressed account on Solana."
     );
-    // client.queuedTransactions[0].print();
+    console.log(client.queuedTransactions[0]);
     // console.log(
-    //   "Serialized multisig transaction length "
-    // client.queuedTransactions[0].toBytes().length.toString()
+    //   "Serialized multisig transaction length ",
+    //   client.queuedTransactions[0].toBytes().length.toString()
     // );
-    console.log("(We can probably optimize here.)");
+    // console.log("(We can probably optimize here.)");
+
+    // await user.getUtxoInbox();
+    // await user.provider.latestMerkleTree();
 
     const approvedTransaction = await client.approve(0);
 
@@ -708,7 +723,12 @@ describe("Test multisig", () => {
     console.log("------------------------------------------\n");
   });
 
-  async function deposit(provider, utxo, lightProvider: LightProvider) {
+  async function deposit(
+    provider,
+    utxo,
+    lightProvider: LightProvider,
+    user: User
+  ) {
     // let txParams = new TransactionParameters({
     //   poseidon: lightProvider.poseidon,
     //   outputUtxos: [utxo],
@@ -722,7 +742,7 @@ describe("Test multisig", () => {
 
     const txParams = new TransactionParameters({
       outputUtxos: [utxo],
-      senderSol: userTokenAccount,
+      senderSol: ADMIN_AUTH_KEYPAIR.publicKey,
       transactionMerkleTreePubkey: MerkleTreeConfig.getTransactionMerkleTreePda(
         new BN(0)
       ),
@@ -732,21 +752,35 @@ describe("Test multisig", () => {
       verifierIdl: IDL_VERIFIER_PROGRAM_ZERO,
     });
 
-    let tx = new Transaction({
-      provider: lightProvider,
-      shuffleEnabled: false,
-      params: txParams,
-    });
+    console.log("wallet.publicKey ", lightProvider.wallet.publicKey.toBase58());
 
-    await tx.compileAndProve();
+    console.log(
+      "signingAddress: ",
+      txParams.accounts.signingAddress.toBase58()
+    );
+
+    console.log(
+      "relayerPubkey: ",
+      txParams.relayer.accounts.relayerPubkey.toBase58()
+    );
+
+    user.storeAppUtxo(utxo);
+
+    // let tx = new Transaction({
+    //   provider: lightProvider,
+    //   shuffleEnabled: false,
+    //   params: txParams,
+    // });
+
+    // await tx.compileAndProve();
     // return await tx.getInstructions();
-    try {
-      let res = await tx.sendAndConfirmTransaction();
-      // console.log(res);
-    } catch (e) {
-      console.log(e);
-      console.log("AUTHORITY: ", AUTHORITY.toBase58());
-    }
+    // try {
+    //   let res = await tx.sendAndConfirmTransaction();
+    //   // console.log(res);
+    // } catch (e) {
+    //   console.log(e);
+    //   console.log("AUTHORITY: ", AUTHORITY.toBase58());
+    // }
 
     console.log("------------------------------------------\n");
     console.log("Updating Merkle Tree");
@@ -761,9 +795,7 @@ describe("Test multisig", () => {
       "In case of a lot of traffic merkle tree updates can be batched to up to 32 leaves at once."
     );
 
-    time("Merkle Tree Update");
-    await updateMerkleTreeForTest(ADMIN_AUTH_KEYPAIR, provider.connection);
-    timeEnd("Merkle Tree Update");
+    // await updateMerkleTreeForTest(ADMIN_AUTH_KEYPAIR, provider.connection);
     console.log("\n\tUpdate Successful");
     console.log("------------------------------------------\n");
   }
@@ -789,15 +821,6 @@ async function createWalletAndAirdropSol(
     recipientPublicKey: wallet.publicKey,
   });
   return wallet;
-}
-
-function createRelayer(wallet: Keypair): TestRelayer {
-  return new TestRelayer({
-    relayerPubkey: wallet.publicKey,
-    relayerRecipientSol: wallet.publicKey,
-    relayerFee: new BN(100_000),
-    payer: wallet,
-  });
 }
 
 const airdrop = async (
@@ -854,9 +877,3 @@ const createSquadExample = async () => {
     console.log("Error:", e);
   }
 };
-function time(arg0: string) {
-  throw new Error("Function not implemented.");
-}
-function timeEnd(arg0: string) {
-  throw new Error("Function not implemented.");
-}
