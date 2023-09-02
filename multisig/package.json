@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.28.0",
-    "@lightprotocol/zk.js": "^0.3.2-alpha.13",
+    "@lightprotocol/zk.js": "file:../../light-protocol/light-zk.js",
     "@project-serum/anchor": "^0.26.0",
     "@sqds/sdk": "^2.0.4",
     "circomlib": "^2.0.5",

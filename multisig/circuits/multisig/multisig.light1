@@ -1,10 +1,10 @@
 pragma circom 2.1.4;
-include "../node_modules/circomlib/circuits/poseidon.circom";
-include "../node_modules/@lightprotocol/zk.js/circuit-lib/merkleProof.circom";
-include "../node_modules/@lightprotocol/zk.js/circuit-lib/keypair.circom";
-include "../node_modules/circomlib/circuits/gates.circom";
-include "../node_modules/circomlib/circuits/comparators.circom";
-include "../node_modules/circomlib/circuits/eddsaposeidon.circom";
+include "../../node_modules/circomlib/circuits/poseidon.circom";
+include "../../node_modules/@lightprotocol/zk.js/circuit-lib/merkleProof.circom";
+include "../../node_modules/@lightprotocol/zk.js/circuit-lib/keypair.circom";
+include "../../node_modules/circomlib/circuits/gates.circom";
+include "../../node_modules/circomlib/circuits/comparators.circom";
+include "../../node_modules/circomlib/circuits/eddsaposeidon.circom";
 
 // will create a new instance of the circuit
 #[instance]
@@ -21,16 +21,15 @@ template multisig() {
     #[utxoData]
     {
         threshold,
-        nrSigners        
+        nrSigners
     }
-    
+
     var nrMaxSigners = 7;
     var baseVariables = 2;
 
     signal input signerPubkeysX[nrMaxSigners];
     signal input signerPubkeysY[nrMaxSigners];
-    signal input isMultiSigUtxo[nIns];
-    
+
     // calculate instruction hash
     // component instructionHasher = Poseidon(baseVariables + nrMaxSigners * 2);
     // instructionHasher.inputs[0] <== threshold;
@@ -44,28 +43,11 @@ template multisig() {
     //     j++;
     // }
     
-    // component checkInstructionType[nIns];
-    // search for input utxo with this instructionHash
-    // the position of this utxo is specified in isEscrowAccount
-    // This is necessary because all paths need inside the circuit are hardcoded.
-    // also checks that all other instructionHashes are 0
-    // otherwise one could spend a utxo belonging to a different multisig
-    // for (var i=0; i < nIns; i++) {       
-    //     inAppDataHash[i] === instructionHasher.out * isMultiSigUtxo[i];
-    // }
-    
-    component checkIndicesMultiSigUtxo = CheckIndices(nIns);
-    checkIndicesMultiSigUtxo.threshold <== 1;
-    for (var i = 0; i < nIns; i++) {
-        checkIndicesMultiSigUtxo.indices[i] <== isMultiSigUtxo[i];
-    }
-
-    
     signal input enabled[nrMaxSigners];
 
     signal input signatures[nrMaxSigners];
-    signal input R8x[nrMaxSigners];
-    signal input R8y[nrMaxSigners];
+    signal input r8x[nrMaxSigners];
+    signal input r8y[nrMaxSigners];
 
     // check either one or zero plus
     // number of signatures to check is greater than the threshold
@@ -103,8 +85,8 @@ template multisig() {
         sigVerifier[i].Ax <== signerPubkeysX[i];
         sigVerifier[i].Ay <== signerPubkeysY[i];
         sigVerifier[i].S <== signatures[i];
-        sigVerifier[i].R8x <== R8x[i];
-        sigVerifier[i].R8y <== R8y[i];
+        sigVerifier[i].R8x <== r8x[i];
+        sigVerifier[i].R8y <== r8y[i];
         sigVerifier[i].M <== transactionHasher.out;
     }
 }

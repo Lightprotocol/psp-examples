@@ -14,11 +14,11 @@ const bs58 = require("bs58");
 
 export class MultiSig {
   signersEncryptionPublicKeys: Array<Uint8Array>;
-  threshold: number;
+  threshold: BN;
   publicKeyX: Array<Uint8Array>;
   publicKeyY: Array<Uint8Array>;
   poseidon: any;
-  nrSigners: number;
+  nrSigners: BN;
   appDataHash?: string;
   seed: Uint8Array;
   account: Account;
@@ -49,10 +49,10 @@ export class MultiSig {
     priorMultiSigHash: Uint8Array;
     priorMultiSigSeed: Uint8Array;
   }) {
-    this.threshold = threshold;
+    this.threshold = new BN(threshold);
     this.publicKeyX = publicKeyX;
     this.publicKeyY = publicKeyY;
-    this.nrSigners = nrSigners;
+    this.nrSigners = new BN(nrSigners);
     this.signersEncryptionPublicKeys = signersEncryptionPublicKeys;
     this.appDataHash = MultiSig.getHash(
       poseidon,
@@ -93,26 +93,33 @@ export class MultiSig {
       seed: new Uint8Array(32).fill(3).toString(),
     });
     dummyAccount.poseidonEddsaKeypair = {
-      publicKey: [new Uint8Array(32).fill(0), new Uint8Array(32).fill(0)],
+      publicKey: [
+          new Uint8Array(32).fill(0),
+        new Uint8Array(32).fill(0)
+      ],
       privateKey: new Uint8Array(32).fill(0),
     };
 
+    let publicKeyX: Uint8Array[] = [];
+    let publicKeyY: Uint8Array[] = [];
+
+    for (let signer of signers)
+    {
+      const pubkey = await signer.getEddsaPublicKey();
+      publicKeyX.push(pubkey[0]);
+      publicKeyY.push(pubkey[1]);
+    }
+
     while (MAX_SIGNERS > signers.length) {
       signers.push(dummyAccount);
+      // const pubkey = new Uint8Array(32).fill(0)
+      publicKeyX.push(new Uint8Array(32).fill(0));
+      publicKeyY.push(new Uint8Array(32).fill(0));
     }
 
     const signersEncryptionPublicKeys = signers.map(
       (signer) => signer.encryptionKeypair.publicKey
     );
-
-    let publicKeyX: Uint8Array[] = [];
-    let publicKeyY: Uint8Array[] = [];
-
-    for (let signer of signers) {
-      let pubkey = await signer.getEddsaPublicKey();
-      publicKeyX.push(pubkey[0]);
-      publicKeyY.push(pubkey[1]);
-    }
 
     return new MultiSig({
       poseidon,
@@ -148,7 +155,7 @@ export class MultiSig {
     console.log("Shared encryption private key: <encryption-key>");
 
     for (var i = 0; i < this.publicKeyX.length; i++) {
-      if (i < this.nrSigners) {
+      if (i < this.nrSigners.toNumber()) {
         console.log(
           `Signer: ${i}`,
           utils.bytes.hex.encode(

@@ -4,12 +4,12 @@
 * THE FILE WILL BE OVERWRITTEN EVERY TIME THE LIGHT CLI BUILD IS RUN.
 */
 pragma circom 2.1.4;
-include "../node_modules/circomlib/circuits/poseidon.circom";
-include "../node_modules/@lightprotocol/zk.js/circuit-lib/merkleProof.circom";
-include "../node_modules/@lightprotocol/zk.js/circuit-lib/keypair.circom";
-include "../node_modules/circomlib/circuits/gates.circom";
-include "../node_modules/circomlib/circuits/comparators.circom";
-include "../node_modules/circomlib/circuits/eddsaposeidon.circom";
+include "../../node_modules/circomlib/circuits/poseidon.circom";
+include "../../node_modules/@lightprotocol/zk.js/circuit-lib/merkleProof.circom";
+include "../../node_modules/@lightprotocol/zk.js/circuit-lib/keypair.circom";
+include "../../node_modules/circomlib/circuits/gates.circom";
+include "../../node_modules/circomlib/circuits/comparators.circom";
+include "../../node_modules/circomlib/circuits/eddsaposeidon.circom";
 
 
 template multisig( nAppUtxos, levels, nIns, nOuts, feeAsset, indexFeeAsset, indexPublicAsset, nAssets, nInAssets, nOutAssets) {
@@ -214,51 +214,56 @@ template multisig( nAppUtxos, levels, nIns, nOuts, feeAsset, indexFeeAsset, inde
 signal input threshold;
 signal input nrSigners;
 component instructionHasher[nAppUtxos];
-
-            component checkInstructionHash[nAppUtxos][nIns];
-for (var appUtxoIndex = 0; appUtxoIndex < nAppUtxos; appUtxoIndex++) {
-            	instructionHasher[appUtxoIndex] = Poseidon(2);
-instructionHasher[appUtxoIndex].inputs[0] <== threshold;
-instructionHasher[appUtxoIndex].inputs[1] <== nrSigners;
-for (var inUtxoIndex = 0; inUtxoIndex < nIns; inUtxoIndex++) {
-        checkInstructionHash[appUtxoIndex][inUtxoIndex] = ForceEqualIfEnabled();
-        checkInstructionHash[appUtxoIndex][inUtxoIndex].in[0] <== inAppDataHash[inUtxoIndex];
-        checkInstructionHash[appUtxoIndex][inUtxoIndex].in[1] <== instructionHasher[appUtxoIndex].out;
-        checkInstructionHash[appUtxoIndex][inUtxoIndex].enabled <== isAppInUtxo[appUtxoIndex][inUtxoIndex];
-   }
-
-    }
-
+component checkInstructionHash[nAppUtxos][nIns];
 
 var nrMaxSigners = 7;
 var baseVariables = 2;
 
 signal input signerPubkeysX[nrMaxSigners];
 signal input signerPubkeysY[nrMaxSigners];
-signal input isMultiSigUtxo[nIns];
 
+for (var appUtxoIndex = 0; appUtxoIndex < nAppUtxos; appUtxoIndex++) {
+    instructionHasher[appUtxoIndex] = Poseidon(16);
+    instructionHasher[appUtxoIndex].inputs[0] <== threshold;
+    instructionHasher[appUtxoIndex].inputs[1] <== nrSigners;
+    log("instructionHasher[", appUtxoIndex, "][",  0, "] = ", instructionHasher[appUtxoIndex].inputs[0]);
+    log("instructionHasher[", appUtxoIndex,  "][", 0,  "] = ", instructionHasher[appUtxoIndex].inputs[1]);
 
+     for (var i = baseVariables; i < nrMaxSigners + baseVariables; i++) {
+        instructionHasher[appUtxoIndex].inputs[i] <== signerPubkeysX[i - baseVariables];
+        log("instructionHasher[", appUtxoIndex, "][", i, "] = ", instructionHasher[appUtxoIndex].inputs[i]);
+     }
 
+     // if need more max signers hash x and y
+     for (var i = baseVariables + nrMaxSigners; i < nrMaxSigners * 2 + baseVariables; i++) {
+        instructionHasher[appUtxoIndex].inputs[i] <== signerPubkeysY[i - baseVariables - nrMaxSigners];
+        log("instructionHasher[", appUtxoIndex, "][", i, "] = ", instructionHasher[appUtxoIndex].inputs[i]);
+     }
 
-component checkIndicesMultiSigUtxo = CheckIndices(nIns);
-checkIndicesMultiSigUtxo.threshold <== 1;
-for (var i = 0; i < nIns; i++) {
-checkIndicesMultiSigUtxo.indices[i] <== isMultiSigUtxo[i];
+    for (var inUtxoIndex = 0; inUtxoIndex < nIns; inUtxoIndex++) {
+
+        log("appUtxoIndex = ", appUtxoIndex);
+        log("inAppDataHash[", inUtxoIndex, "] = ", inAppDataHash[inUtxoIndex]);
+        log("instructionHasher[", appUtxoIndex, "].out = ", instructionHasher[appUtxoIndex].out);
+        log("isAppInUtxo[", appUtxoIndex, "][", inUtxoIndex, "] = ", isAppInUtxo[appUtxoIndex][inUtxoIndex]);
+
+        checkInstructionHash[appUtxoIndex][inUtxoIndex] = ForceEqualIfEnabled();
+        checkInstructionHash[appUtxoIndex][inUtxoIndex].in[0] <== inAppDataHash[inUtxoIndex];
+        checkInstructionHash[appUtxoIndex][inUtxoIndex].in[1] <== instructionHasher[appUtxoIndex].out;
+        checkInstructionHash[appUtxoIndex][inUtxoIndex].enabled <== isAppInUtxo[appUtxoIndex][inUtxoIndex];
+   }
+
 }
-
-
 signal input enabled[nrMaxSigners];
-
 signal input signatures[nrMaxSigners];
-signal input R8x[nrMaxSigners];
-signal input R8y[nrMaxSigners];
+signal input r8x[nrMaxSigners];
+signal input r8y[nrMaxSigners];
 
 component checkIndices = CheckIndices(nrMaxSigners);
 checkIndices.threshold <== threshold;
 for (var i = 0; i < nrMaxSigners; i++) {
 checkIndices.indices[i] <== enabled[i];
 }
-
 
 
 
@@ -270,8 +275,8 @@ sigVerifier[i].enabled <== enabled[i] * signerPubkeysX[i];
 sigVerifier[i].Ax <== signerPubkeysX[i];
 sigVerifier[i].Ay <== signerPubkeysY[i];
 sigVerifier[i].S <== signatures[i];
-sigVerifier[i].R8x <== R8x[i];
-sigVerifier[i].R8y <== R8y[i];
+sigVerifier[i].R8x <== r8x[i];
+sigVerifier[i].R8y <== r8y[i];
 sigVerifier[i].M <== transactionHasher.out;
 }
 }

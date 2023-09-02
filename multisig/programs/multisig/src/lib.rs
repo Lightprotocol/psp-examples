@@ -7,8 +7,8 @@ pub mod auto_generated_accounts;
 pub use auto_generated_accounts::*;
 pub mod processor;
 pub use processor::*;
-pub mod verifying_key;
-pub use verifying_key::*;
+pub mod verifying_key_multisig;
+pub use verifying_key_multisig::*;
 
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");

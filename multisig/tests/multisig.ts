@@ -1,55 +1,37 @@
 import * as anchor from "@coral-xyz/anchor";
-import { assert } from "chai";
+import {BN} from "@coral-xyz/anchor";
+import {assert} from "chai";
 import {
-  Utxo,
-  TransactionParameters,
-  Provider as LightProvider,
-  confirmConfig,
-  Action,
-  TestRelayer,
-  User,
-  ProgramUtxoBalance,
-  airdropSol,
-  ProgramParameters,
-  KEYPAIR_PRIVKEY,
   Account,
+  Action,
   ADMIN_AUTH_KEYPAIR,
-  Transaction,
-  merkleTreeProgramId,
-  verifierProgramStorageProgramId,
-  MerkleTreeConfig,
+  airdropSol,
+  confirmConfig,
   IDL_VERIFIER_PROGRAM_ZERO,
-  userTokenAccount,
-  AUTHORITY,
-  updateMerkleTreeForTest,
-  SolMerkleTree,
+  KEYPAIR_PRIVKEY,
   MerkleTree,
+  MerkleTreeConfig,
+  merkleTreeProgramId,
+  Provider as LightProvider,
+  TestRelayer,
+  Transaction,
+  TransactionParameters,
+  User,
+  Utxo,
+  verifierProgramStorageProgramId,
 } from "@lightprotocol/zk.js";
-import {
-  SystemProgram,
-  PublicKey,
-  Keypair,
-  Connection,
-  LAMPORTS_PER_SOL,
-} from "@solana/web3.js";
-import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-
-import { BN } from "@coral-xyz/anchor";
-import { IDL } from "../target/types/multisig";
+import {Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram,} from "@solana/web3.js";
+import {bs58} from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import {IDL} from "../target/types/multisig";
+import {buildBabyjub, buildEddsa, buildPoseidonOpt} from "circomlibjs";
+import {MultiSig} from "../src";
+import {StorageUtils} from "../src/storageClient";
+import {Approval} from "../src/transaction";
+import {MultiSigClient} from "../src/client";
+import {MessageClient} from "../src/messageClient";
+import Squads, {DEFAULT_MULTISIG_PROGRAM_ID, getAuthorityPDA, Wallet,} from "@sqds/sdk";
 
 let circomlibjs = require("circomlibjs");
-
-import { buildPoseidonOpt, buildBabyjub, buildEddsa } from "circomlibjs";
-import { MultiSig } from "../src";
-import { StorageUtils } from "../src/storageClient";
-import { Approval } from "../src/transaction";
-import { MultiSigClient, printUtxo } from "../src/client";
-import { MessageClient } from "../src/messageClient";
-import Squads, {
-  DEFAULT_MULTISIG_PROGRAM_ID,
-  getAuthorityPDA,
-} from "@sqds/sdk";
-import { Wallet } from "@sqds/sdk";
 
 const path = require("path");
 
@@ -589,7 +571,7 @@ describe("Test multisig", () => {
     // console.log("This is the multisig output utxo");
     // console.log(printUtxo(outputUtxo, 0, "ouput"));
 
-    await deposit(provider, outputUtxo, lightProvider, user);
+    await deposit(outputUtxo, user);
     console.log("------------------------------------------");
     console.log("\n\n");
 
@@ -642,10 +624,12 @@ describe("Test multisig", () => {
     // await squads.executeTransaction(txState.publicKey);
     // squads._executeTransaction(transactionPDA, payer)
 
-    // await updateMerkleTreeForTest(ADMIN_AUTH_KEYPAIR, lightProvider.url);
+
     lightProvider.solMerkleTree!.merkleTree = new MerkleTree(18, poseidon, [
       outputUtxo.getCommitment(poseidon),
     ]);
+
+    // await updateMerkleTreeForTest(ADMIN_AUTH_KEYPAIR, lightProvider.url);
 
     // lightProvider.solMerkleTree = await SolMerkleTree.build({
     //   pubkey: MERKLE_TREE_KEY,
@@ -724,9 +708,7 @@ describe("Test multisig", () => {
   });
 
   async function deposit(
-    provider,
-    utxo,
-    lightProvider: LightProvider,
+    utxo: Utxo,
     user: User
   ) {
     // let txParams = new TransactionParameters({
@@ -748,11 +730,11 @@ describe("Test multisig", () => {
       ),
       eventMerkleTreePubkey: MerkleTreeConfig.getEventMerkleTreePda(new BN(0)),
       action: Action.SHIELD,
-      poseidon: lightProvider.poseidon,
+      poseidon: user.provider.poseidon,
       verifierIdl: IDL_VERIFIER_PROGRAM_ZERO,
     });
 
-    console.log("wallet.publicKey ", lightProvider.wallet.publicKey.toBase58());
+    console.log("wallet.publicKey ", user.provider.wallet.publicKey.toBase58());
 
     console.log(
       "signingAddress: ",
@@ -764,7 +746,10 @@ describe("Test multisig", () => {
       txParams.relayer.accounts.relayerPubkey.toBase58()
     );
 
-    user.storeAppUtxo(utxo);
+    await user.storeAppUtxo({
+      appUtxo: utxo,
+      action: Action.SHIELD
+    });
 
     // let tx = new Transaction({
     //   provider: lightProvider,

@@ -16,7 +16,7 @@ import {
   MerkleTreeConfig,
   verifierProgramTwoProgramId,
   IDL_VERIFIER_PROGRAM_TWO,
-  updateMerkleTreeForTest,
+  updateMerkleTreeForTest, User,
 } from "@lightprotocol/zk.js";
 import { MultiSig } from "./multisigParams";
 import { Scalar } from "ffjavascript";
@@ -296,17 +296,16 @@ export class MultiSigClient {
       seed: new Uint8Array(32).fill(3).toString(),
       eddsa: this.eddsa,
     });
-    var pubkeyDummy = await keypairDummy.getEddsaPublicKey();
+
+    let pubkeyDummy = await keypairDummy.getEddsaPublicKey();
     pubkeyDummy[0] = new Uint8Array(32).fill(0);
+    pubkeyDummy[1] = new Uint8Array(32).fill(0);
+
     const signatureDummy = await keypairDummy.signEddsa("123124");
 
     // TODO: need to enforce correct order in signatures
     // fill signatures up with dummy signatures
-    for (
-      var i = this.queuedTransactions[index].approvals.length;
-      i < MAX_SIGNERS;
-      i++
-    ) {
+    for (let i = this.queuedTransactions[index].approvals.length; i < MAX_SIGNERS; i++) {
       this.queuedTransactions[index].approvals.push(
         new Approval({
           publicKey: pubkeyDummy,
@@ -318,9 +317,9 @@ export class MultiSigClient {
     const circuitPath = path.join("build-circuit");
     const appParams = {
       inputs: {
+        isAppInUtxo: [],
         threshold: this.multiSigParams.threshold.toString(),
         nrSigners: this.multiSigParams.nrSigners.toString(),
-        isMultiSigUtxo: [1, 0, 0, 0], // TODO: make variable
         enabled: [1, 1, ...new Array(MAX_SIGNERS - 2).fill(0)], // TODO: make variable
         signerPubkeysX: this.queuedTransactions[index].approvals.map(
           (approval) => this.poseidon.F.toObject(approval.publicKey[0])
@@ -328,12 +327,12 @@ export class MultiSigClient {
         signerPubkeysY: this.queuedTransactions[index].approvals.map(
           (approval) => this.poseidon.F.toObject(approval.publicKey[1])
         ),
-        R8x: this.queuedTransactions[index].approvals.map((approval) =>
+        r8x: this.queuedTransactions[index].approvals.map((approval) =>
           this.poseidon.F.toObject(
             this.eddsa.unpackSignature(approval.signature).R8[0]
           )
         ),
-        R8y: this.queuedTransactions[index].approvals.map((approval) =>
+        r8y: this.queuedTransactions[index].approvals.map((approval) =>
           this.poseidon.F.toObject(
             this.eddsa.unpackSignature(approval.signature).R8[1]
           )
@@ -350,8 +349,10 @@ export class MultiSigClient {
 
   async execute(index: number) {
     const appParams = await this.createAppParams(index);
-    const params = this.queuedTransactions[0].transactionParams;
-
+    let params = this.queuedTransactions[0].transactionParams;
+    console.log("utxos = ", params.inputUtxos);
+    appParams.inputs.isAppInUtxo = Utxo.getAppInUtxoIndices(params.inputUtxos);
+    console.log("appParams.inputs = ", appParams.inputs);
     // TODO: remove payer and send to relayer instead
     let tx = new Transaction({
       provider: this.provider,
@@ -361,6 +362,8 @@ export class MultiSigClient {
     });
     // TODO: remove when we have relayer only for testing
     // txParams.payer = ADMIN_AUTH_KEYPAIR;
+
+    tx.transactionInputs.rootIndex = new BN(0);
 
     await tx.compileAndProve();
     await tx.sendAndConfirmTransaction();
@@ -378,7 +381,7 @@ export class MultiSigClient {
     // await tx.sendAndConfirmTransaction();
 
     // await tx.checkBalances();
-    await updateMerkleTreeForTest(ADMIN_AUTH_KEYPAIR, this.provider.url);
+    // await updateMerkleTreeForTest(ADMIN_AUTH_KEYPAIR, this.provider.url);
   }
 }
 
