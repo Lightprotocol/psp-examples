@@ -6,11 +6,16 @@ This PSP allows you to insert values into a merkletree and then prove inclusion 
 
 Before running the code, ensure that you have the following installed on your machine:
 
-node.js, yarn
-circom
-rust
-cargo-expand (cargo install cargo-expand)
-solana-cli >= 1.16.4
+- node.js, yarn
+
+- circom
+
+- rust
+
+- cargo-expand (cargo install cargo-expand)
+
+- solana-cli >= 1.16.4
+
 
 ### Run
 
