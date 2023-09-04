@@ -55,7 +55,6 @@ The PSP has two circuits and two instructions to verify proofs.
 ## Notes
 
 - Merkle tree is append-only
-- Currently, the CLI generates PSPs by default with three separate instructions sequentially executed over 3 Solana txs.
 
 Current proof generation performance (not optimized, m2 mac, node env):
 
