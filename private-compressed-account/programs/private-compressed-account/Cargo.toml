@@ -21,7 +21,7 @@ anchor-spl = "0.28.0"
 merkle_tree_program = { git = "https://github.com/lightprotocol/light-protocol", features = ["cpi"], tag = "v0.3.2" }
 verifier_program_two = { git = "https://github.com/lightprotocol/light-protocol", features = ["cpi"], tag = "v0.3.2" }
 light-macros = "0.1.0"
-light-verifier-sdk = { path ="../../../../light-protocol-onchain/light-verifier-sdk" }
+light-verifier-sdk = { git = "https://github.com/lightprotocol/light-protocol", rev = "1cda4774c1a10022c69cd3744a281094465e8c53"}
 solana-program = "1.16.4"
 groth16-solana = "0.0.2"
 
