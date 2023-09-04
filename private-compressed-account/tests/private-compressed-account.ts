@@ -14,10 +14,9 @@ import { buildPoseidonOpt } from "circomlibjs";
 import { BN } from "@coral-xyz/anchor";
 import { IDL } from "../target/types/private_compressed_account";
 import { PoseidonCompressedAccount } from "../sdk";
-
-var POSEIDON;
-
+var POSEIDON: any;
 const RPC_URL = "http://127.0.0.1:8899";
+var log = console.log;
 
 describe("Test private-compressed-account", () => {
   process.env.ANCHOR_PROVIDER_URL = RPC_URL;
@@ -31,13 +30,13 @@ describe("Test private-compressed-account", () => {
     POSEIDON = await buildPoseidonOpt();
   });
 
-  it.skip("Functional Test Merkle Tree Update & Inclusion Circuits", async () => {
+  it.skip("Merkle Tree Update Circuits, 100 rounds", async () => {
     const compressedAccount = new PoseidonCompressedAccount(POSEIDON, IDL, 0);
     let insertValue = "12";
     let leafHash = POSEIDON.F.toString(POSEIDON([insertValue]));
     await compressedAccount.generateUpdateProof({ leafHash });
     for (let i = 0; i < 100; i++) {
-      console.log("i ", i);
+      log(`i ${i}`);
       let insertValue1 = (i + 1).toString();
       let leafHash = POSEIDON.F.toString(POSEIDON([insertValue1]));
       console.time("fullProveAndParse");
@@ -46,35 +45,41 @@ describe("Test private-compressed-account", () => {
     }
   });
 
-  it("Functional Test Inclusion Gt Circuit", async () => {
-    const compressedAccount = new PoseidonCompressedAccount(POSEIDON, IDL, 0);
-    let insertValue = "12";
+  let compressedAccount: PoseidonCompressedAccount;
+  let insertValue = "12";
+
+  it("Inclusion Gt Circuit should succeed", async () => {
+    compressedAccount = new PoseidonCompressedAccount(POSEIDON, IDL, 0);
     let leafHash = POSEIDON.F.toString(POSEIDON([insertValue]));
     await compressedAccount.generateUpdateProof({ leafHash });
 
+    log(`insertValue 12, refValue 12`);
     await compressedAccount.generateInclusionProof({
       leafInput: insertValue,
       referenceValue: new BN("12"),
     });
+    log(`insertValue 12, refValue 11`);
     await compressedAccount.generateInclusionProof({
       leafInput: insertValue,
       referenceValue: new BN("11"),
     });
-
+  });
+  it("Inclusion Gt Circuit should fail with Lt value", async () => {
     let throwed = false;
     try {
+      log(`insertValue 12, refValue 13`);
       await compressedAccount.generateInclusionProof({
         leafInput: insertValue,
         referenceValue: new BN("13"),
       });
     } catch (error) {
-      console.error("error ", error);
+      console.error("expected error ", error);
       throwed = true;
     }
     assert(throwed, "Should throw error");
   });
 
-  it("Create and Spend Program Utxo ", async () => {
+  it("Create and Spend Program Utxo loop", async () => {
     const wallet = Keypair.generate();
     await airdropSol({
       connection: provider.connection,
@@ -118,17 +123,17 @@ describe("Test private-compressed-account", () => {
       console.error("error ", error);
       throw error;
     }
-    console.log("merkle tree account initialized ");
+    log(`merkle tree account initialized`);
 
     let insertValue = "12";
     let { txHash } = await compressedAccount.insertLeaf(insertValue);
-    console.log("transaction hash ", txHash);
+    log(`tx signatures: ${txHash.signatures}`);
+
     for (let i = 0; i < 10; i++) {
-      console.log("i ", i);
       let insertValue1 = (i + 1).toString();
       let { txHash } = await compressedAccount.insertLeaf(insertValue1);
-      console.log("transaction hash ", txHash);
-      let hash = await compressedAccount.verifyInclusionGte({
+      log(`i: ${i}, tx signatures: ${txHash.signatures}`);
+      await compressedAccount.verifyInclusionGte({
         leafInput: insertValue,
         referenceValue: new BN("0"),
       });
