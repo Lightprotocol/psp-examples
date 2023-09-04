@@ -2,7 +2,7 @@
 
 This PSP allows you to insert values into a Merkletree and then prove the inclusion of these values via ZKPs.
 
-### Prerequisites
+## Prerequisites
 
 Before running the code, ensure that you have the following installed on your machine:
 
@@ -17,7 +17,7 @@ Before running the code, ensure that you have the following installed on your ma
 - solana-cli >= 1.16.4
 
 
-### Run
+## Run
 
 1. Install the required dependencies using yarn:
 
@@ -31,7 +31,7 @@ Before running the code, ensure that you have the following installed on your ma
 
 `yarn test`
 
-### User flow
+## User flow
 
 1.  Insert a value into the Merkle tree. `(Hashed value, Poseidon([value]))`
 2.  Prove inclusion of the value (A program can invoke this instruction via cpi to verify the property it wants to verify.)
@@ -50,7 +50,7 @@ The PSP has two circuits and two instructions to verify proofs.
 
     ⁃ Private inputs: `(Merkle tree path, Value)`
 
-### Notes
+## Notes
 
 - Merkle tree is append-only
 - Currently, the CLI generates PSPs by default with three separate instructions sequentially executed over 3 Solana txs.
