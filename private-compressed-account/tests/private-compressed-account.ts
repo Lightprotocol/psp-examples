@@ -53,12 +53,12 @@ describe("Test private-compressed-account", () => {
     let leafHash = POSEIDON.F.toString(POSEIDON([insertValue]));
     await compressedAccount.generateUpdateProof({ leafHash });
 
-    log(`insertValue 12, refValue 12`);
+    log("insertValue 12, refValue 12");
     await compressedAccount.generateInclusionProof({
       leafInput: insertValue,
       referenceValue: new BN("12"),
     });
-    log(`insertValue 12, refValue 11`);
+    log("insertValue 12, refValue 11");
     await compressedAccount.generateInclusionProof({
       leafInput: insertValue,
       referenceValue: new BN("11"),
@@ -67,7 +67,7 @@ describe("Test private-compressed-account", () => {
   it("Inclusion Gt Circuit should fail with Lt value", async () => {
     let throwed = false;
     try {
-      log(`insertValue 12, refValue 13`);
+      log("insertValue 12, refValue 13");
       await compressedAccount.generateInclusionProof({
         leafInput: insertValue,
         referenceValue: new BN("13"),
@@ -123,7 +123,7 @@ describe("Test private-compressed-account", () => {
       console.error("error ", error);
       throw error;
     }
-    log(`merkle tree account initialized`);
+    log("merkle tree account initialized");
 
     let insertValue = "12";
     let { txHash } = await compressedAccount.insertLeaf(insertValue);
