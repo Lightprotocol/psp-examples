@@ -18,10 +18,10 @@ default = []
 [dependencies]
 anchor-lang = "0.28.0"
 anchor-spl = "0.28.0"
-merkle_tree_program = { git = "https://github.com/lightprotocol/light-protocol", features = ["cpi"], rev = "8b7c5f4c0c2a9acbfdd32183ae5ccfd8ec96bf90" }
-verifier_program_two = { git = "https://github.com/lightprotocol/light-protocol", features = ["cpi"], rev = "8b7c5f4c0c2a9acbfdd32183ae5ccfd8ec96bf90" }
+merkle_tree_program = { git = "https://github.com/lightprotocol/light-protocol", features = ["cpi"], tag = "v0.3.2" }
+verifier_program_two = { git = "https://github.com/lightprotocol/light-protocol", features = ["cpi"], tag = "v0.3.2" }
 light-macros = "0.1.0"
-light-verifier-sdk = { git = "https://github.com/lightprotocol/light-protocol", rev = "8b7c5f4c0c2a9acbfdd32183ae5ccfd8ec96bf90" }
+light-verifier-sdk = { git = "https://github.com/lightprotocol/light-protocol", tag = "v0.3.2" }
 solana-program = "1.16.4"
 groth16-solana = "0.0.2"
 bytemuck = { version = "1.4.0", features = ["derive", "min_const_generics"]}

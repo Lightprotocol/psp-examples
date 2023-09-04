@@ -7,8 +7,8 @@ pub mod auto_generated_accounts;
 pub use auto_generated_accounts::*;
 pub mod processor;
 pub use processor::*;
-pub mod verifying_key;
-pub use verifying_key::*;
+pub mod verifying_key_swap;
+pub use verifying_key_swap::*;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -27,7 +27,13 @@ pub mod swap {
     /// such as leaves, amounts, recipients, nullifiers, etc. to execute the protocol logic
     /// in the last transaction after successful ZKP verification. light_verifier_sdk::light_instruction::LightInstruction2
     pub fn light_instruction_first<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, LightInstructionFirst<'info, NR_CHECKED_INPUTS>>,
+        ctx: Context<
+            'a,
+            'b,
+            'c,
+            'info,
+            LightInstructionFirst<'info, { VERIFYINGKEY_SWAP.nr_pubinputs }>,
+        >,
         inputs: Vec<u8>,
     ) -> Result<()> {
         let inputs_des: InstructionDataLightInstructionFirst =
@@ -47,11 +53,12 @@ pub mod swap {
         let mut program_id_hash = hash(&ctx.program_id.to_bytes()).to_bytes();
         program_id_hash[0] = 0;
 
-        let mut checked_inputs: [[u8; 32]; NR_CHECKED_INPUTS] = [[0u8; 32]; NR_CHECKED_INPUTS];
+        let mut checked_inputs: [[u8; 32]; VERIFYINGKEY_SWAP.nr_pubinputs] =
+            [[0u8; 32]; VERIFYINGKEY_SWAP.nr_pubinputs];
         checked_inputs[0] = program_id_hash;
         checked_inputs[1] = inputs_des.transaction_hash;
 
-        process_psp_instruction_first::<NR_CHECKED_INPUTS, 17>(
+        process_psp_instruction_first::<{ VERIFYINGKEY_SWAP.nr_pubinputs }, 17>(
             ctx,
             &proof,
             &public_amount,
@@ -66,7 +73,13 @@ pub mod swap {
     }
 
     pub fn light_instruction_second<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, LightInstructionSecond<'info, NR_CHECKED_INPUTS>>,
+        ctx: Context<
+            'a,
+            'b,
+            'c,
+            'info,
+            LightInstructionSecond<'info, { VERIFYINGKEY_SWAP.nr_pubinputs }>,
+        >,
         inputs: Vec<u8>,
     ) -> Result<()> {
         inputs.chunks(32).enumerate().for_each(|(i, input)| {
@@ -81,7 +94,13 @@ pub mod swap {
     /// The proof is verified with the parameters saved in the first transaction.
     /// At successful verification protocol logic is executed.
     pub fn light_instruction_third<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, LightInstructionThird<'info, NR_CHECKED_INPUTS>>,
+        ctx: Context<
+            'a,
+            'b,
+            'c,
+            'info,
+            LightInstructionThird<'info, { VERIFYINGKEY_SWAP.nr_pubinputs }>,
+        >,
         inputs: Vec<u8>,
     ) -> Result<()> {
         let mut reversed_public_inputs = ctx.accounts.verifier_state.checked_public_inputs[2];
@@ -169,7 +188,7 @@ pub mod swap {
 
         msg!("gch as [u8;32] = {:?}", gch);
 
-        let res = anchor_lang::prelude::Pubkey::find_program_address(&[&gch], ctx.program_id).0;
+        let _res = anchor_lang::prelude::Pubkey::find_program_address(&[&gch], ctx.program_id).0;
         msg!("find_program_address {:?}", utxo);
 
         ctx.accounts.swap_pda.swap = Swap::new(utxo.try_into().unwrap());

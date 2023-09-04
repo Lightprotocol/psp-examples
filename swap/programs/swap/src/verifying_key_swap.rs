@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use groth16_solana::groth16::Groth16Verifyingkey;
 
-pub const VERIFYINGKEY: Groth16Verifyingkey = Groth16Verifyingkey {
-    nr_pubinputs: 5,
+pub const VERIFYINGKEY_SWAP: Groth16Verifyingkey = Groth16Verifyingkey {
+    nr_pubinputs: 4,
     vk_alpha_g1: [
         45, 77, 154, 167, 227, 2, 217, 223, 65, 116, 157, 85, 7, 148, 157, 5, 219, 234, 51, 251,
         177, 108, 100, 59, 34, 245, 153, 162, 190, 109, 242, 226, 20, 190, 221, 80, 60, 55, 206,
@@ -31,13 +31,13 @@ pub const VERIFYINGKEY: Groth16Verifyingkey = Groth16Verifyingkey {
     ],
 
     vk_delta_g2: [
-        43, 119, 205, 88, 91, 127, 87, 157, 66, 18, 162, 48, 71, 70, 178, 119, 66, 76, 81, 240, 80,
-        141, 255, 156, 176, 217, 29, 15, 157, 195, 46, 142, 32, 41, 167, 150, 251, 187, 209, 122,
-        10, 100, 194, 193, 245, 29, 58, 207, 234, 156, 10, 43, 239, 141, 131, 233, 152, 192, 115,
-        57, 210, 153, 35, 22, 35, 57, 145, 148, 199, 159, 143, 142, 214, 33, 127, 87, 127, 39, 71,
-        58, 22, 251, 72, 80, 8, 117, 172, 12, 13, 55, 168, 90, 161, 161, 116, 183, 29, 209, 226,
-        157, 135, 149, 170, 43, 128, 116, 108, 96, 243, 215, 169, 127, 181, 2, 33, 120, 192, 11,
-        73, 190, 233, 164, 216, 171, 73, 20, 230, 32,
+        33, 142, 77, 227, 129, 50, 124, 2, 238, 155, 211, 138, 217, 173, 105, 196, 175, 147, 57, 8,
+        240, 2, 134, 118, 125, 206, 200, 68, 80, 47, 46, 229, 31, 249, 137, 149, 116, 126, 190, 60,
+        109, 211, 131, 161, 119, 165, 134, 127, 5, 84, 33, 199, 185, 64, 228, 98, 121, 135, 218,
+        215, 1, 67, 38, 64, 10, 203, 124, 219, 58, 205, 199, 67, 163, 106, 63, 228, 27, 181, 118,
+        219, 23, 211, 235, 224, 74, 106, 52, 124, 167, 189, 9, 65, 178, 168, 204, 40, 9, 136, 158,
+        1, 2, 194, 204, 96, 29, 206, 71, 22, 182, 248, 101, 102, 9, 53, 116, 53, 253, 15, 117, 188,
+        199, 251, 146, 97, 188, 55, 123, 245,
     ],
 
     vk_ic: &[
@@ -74,7 +74,7 @@ pub const VERIFYINGKEY: Groth16Verifyingkey = Groth16Verifyingkey {
     ],
 };
 #[account]
-pub struct ZKswapMainProofInputs {
+pub struct ZKswapProofInputs {
     public_app_verifier: u8,
     transaction_hash: u8,
     public_swap_commitment0: u8,
@@ -106,9 +106,16 @@ pub struct ZKswapMainProofInputs {
     is_taker_out_utxo: [u8; 4],
 }
 #[account]
-pub struct ZKswapMainPublicInputs {
+pub struct ZKswapPublicInputs {
     public_app_verifier: u8,
     transaction_hash: u8,
     public_swap_commitment0: u8,
     public_swap_commitment1: u8,
+}
+#[account]
+pub struct InstructionDataLightInstructionSwapSecond {
+    public_app_verifier: [u8; 32],
+    transaction_hash: [u8; 32],
+    public_swap_commitment0: [u8; 32],
+    public_swap_commitment1: [u8; 32],
 }
