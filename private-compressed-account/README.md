@@ -1,23 +1,23 @@
 # private-compressed-account
 
-### User flow:
+### User flow
 
-1.  Insert a value into the Merkle tree. (Hashed value, Poseidon([value]))
+1.  Insert a value into the Merkle tree. `(Hashed value, Poseidon([value]))`
 2.  Prove inclusion of the value (A program can invoke this instruction via cpi to verify the property it wants to verify.)
 
 The PSP has 2 circuits and 2 instructions to verify proofs
 
 1.  Insert & update Merkle tree
 
-    ⁃ PublicInputs: (oldRoot,newRoot)
+    ⁃ PublicInputs: `(oldRoot,newRoot)`
 
-    ⁃ Private inputs: (value, )
+    ⁃ Private inputs: `(value, )`
 
 2.  Prove inclusion
 
-    ⁃ Public inputs: (Merkle tree root)
+    ⁃ Public inputs: `(Merkle tree root)`
 
-    ⁃ Private inputs: (Merkle tree path, Value)
+    ⁃ Private inputs: `(Merkle tree path, Value)`
 
 ### Notes
 
@@ -26,7 +26,7 @@ The PSP has 2 circuits and 2 instructions to verify proofs
 
 Current performance (not optimized, m2 mac, node env)
 
-- (1) Merkle tree update, height 18: .5-1s
-- (2) Inclusion proof: .5-1s
+- (1) Merkle tree update, height 18: `.5-1s`
+- (2) Inclusion proof: `.5-1s`
 
 - [ ] add benchmarks after proofgen optimizations for different tree heights and machines.
