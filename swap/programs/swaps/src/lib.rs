@@ -7,8 +7,8 @@ pub mod auto_generated_accounts;
 pub use auto_generated_accounts::*;
 pub mod processor;
 pub use processor::*;
-pub mod verifying_key_swap;
-pub use verifying_key_swap::*;
+pub mod verifying_key_swaps;
+pub use verifying_key_swaps::*;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -16,7 +16,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub const PROGRAM_ID: &str = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS";
 
 #[program]
-pub mod swap {
+pub mod swaps {
     use light_verifier_sdk::light_transaction::{Amounts, Proof};
 
     use super::*;
@@ -32,7 +32,7 @@ pub mod swap {
             'b,
             'c,
             'info,
-            LightInstructionFirst<'info, { VERIFYINGKEY_SWAP.nr_pubinputs }>,
+            LightInstructionFirst<'info, { VERIFYINGKEY_SWAPS.nr_pubinputs }>,
         >,
         inputs: Vec<u8>,
     ) -> Result<()> {
@@ -53,12 +53,12 @@ pub mod swap {
         let mut program_id_hash = hash(&ctx.program_id.to_bytes()).to_bytes();
         program_id_hash[0] = 0;
 
-        let mut checked_inputs: [[u8; 32]; VERIFYINGKEY_SWAP.nr_pubinputs] =
-            [[0u8; 32]; VERIFYINGKEY_SWAP.nr_pubinputs];
+        let mut checked_inputs: [[u8; 32]; VERIFYINGKEY_SWAPS.nr_pubinputs] =
+            [[0u8; 32]; VERIFYINGKEY_SWAPS.nr_pubinputs];
         checked_inputs[0] = program_id_hash;
         checked_inputs[1] = inputs_des.transaction_hash;
 
-        process_psp_instruction_first::<{ VERIFYINGKEY_SWAP.nr_pubinputs }, 17>(
+        process_psp_instruction_first::<{ VERIFYINGKEY_SWAPS.nr_pubinputs }, 17>(
             ctx,
             &proof,
             &public_amount,
@@ -78,7 +78,7 @@ pub mod swap {
             'b,
             'c,
             'info,
-            LightInstructionSecond<'info, { VERIFYINGKEY_SWAP.nr_pubinputs }>,
+            LightInstructionSecond<'info, { VERIFYINGKEY_SWAPS.nr_pubinputs }>,
         >,
         inputs: Vec<u8>,
     ) -> Result<()> {
@@ -99,7 +99,7 @@ pub mod swap {
             'b,
             'c,
             'info,
-            LightInstructionThird<'info, { VERIFYINGKEY_SWAP.nr_pubinputs }>,
+            LightInstructionThird<'info, { VERIFYINGKEY_SWAPS.nr_pubinputs }>,
         >,
         inputs: Vec<u8>,
     ) -> Result<()> {

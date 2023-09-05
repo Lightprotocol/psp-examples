@@ -11,7 +11,7 @@ include "../../node_modules/circomlib/circuits/gates.circom";
 include "../../node_modules/circomlib/circuits/comparators.circom";
 
 
-template swap( nAppUtxos, levels, nIns, nOuts, feeAsset, indexFeeAsset, indexPublicAsset, nAssets, nInAssets, nOutAssets) {
+template swaps( nAppUtxos, levels, nIns, nOuts, feeAsset, indexFeeAsset, indexPublicAsset, nAssets, nInAssets, nOutAssets) {
 
 
     assert( nIns * nAssets < 49);

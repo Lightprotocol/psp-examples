@@ -1,5 +1,4 @@
 import * as anchor from "@coral-xyz/anchor";
-import { assert } from "chai";
 import {
   Utxo,
   Provider as LightProvider,
@@ -23,7 +22,7 @@ import {
 
 import { buildPoseidonOpt } from "circomlibjs";
 import { BN } from "@coral-xyz/anchor";
-import { IDL, RockPaperScissors } from "../target/types/rock_paper_scissors";
+import { IDL, Swaps } from "../target/types/swaps";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { findProgramAddressSync } from "@project-serum/anchor/dist/cjs/utils/pubkey";
 const path = require("path");
@@ -82,8 +81,7 @@ class Swap {
   static async create(
     amountFrom: BN,
     amountTo: BN,
-    lightProvider: LightProvider,
-    account: Account
+    lightProvider: LightProvider
   ) {
     const slot = await lightProvider.connection.getSlot();
     const swapParameters: SwapParameters = {
@@ -170,7 +168,7 @@ class Swap {
 class Participant {
   user: User;
   swap?: Swap;
-  pspInstance: anchor.Program<RockPaperScissors>;
+  pspInstance: anchor.Program<Swaps>;
 
   constructor(user: User) {
     this.user = user;
@@ -234,8 +232,7 @@ class Participant {
     this.swap = await Swap.create(
       amountFrom,
       amountTo,
-      this.user.provider,
-      this.user.account
+      this.user.provider
     );
 
     const txHash = await this.user.storeAppUtxo({
@@ -387,15 +384,10 @@ class Participant {
     // We use getBalance to sync the current merkle tree
     await this.user.getBalance();
     const merkleTree = this.user.provider.solMerkleTree.merkleTree;
-    const makerUTXOIndex = merkleTree.indexOf(
+    this.swap.programUtxo.index =  merkleTree.indexOf(
       this.swap.programUtxo.getCommitment(this.user.provider.poseidon)
-    );
-    this.swap.programUtxo.index = makerUTXOIndex;
-
-    const utxoIndexTaker = merkleTree.indexOf(
-      takerProgramUtxo.getCommitment(this.user.provider.poseidon)
-    );
-    takerProgramUtxo.index = utxoIndexTaker;
+      );
+    takerProgramUtxo.index = merkleTree.indexOf(takerProgramUtxo.getCommitment(this.user.provider.poseidon));
 
     const programParameters: ProgramParameters = {
       inputs: {
@@ -419,6 +411,7 @@ class Participant {
       accounts: {
         swapPda: this.swap.pda,
       },
+      circuitName: "swaps"
     };
 
     const makerOutUtxo = new Utxo({

@@ -8,7 +8,7 @@ include "../../node_modules/circomlib/circuits/comparators.circom";
 // will create a new instance of the circuit
 #[instance]
 {
-    fileName: swap,
+    fileName: swaps,
     config(
       nParticipants: 2,
     ),
@@ -17,7 +17,7 @@ include "../../node_modules/circomlib/circuits/comparators.circom";
 }
 
 #[lightTransaction(verifierTwo)]
-template swap() {
+template swaps() {
     // Defines the data which is saved in the utxo
     #[utxoData]
     {
