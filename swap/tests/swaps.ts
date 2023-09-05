@@ -28,7 +28,7 @@ import { findProgramAddressSync } from "@project-serum/anchor/dist/cjs/utils/pub
 const path = require("path");
 
 const verifierProgramId = new PublicKey(
-  "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+  "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
 );
 
 let POSEIDON: any, RELAYER: TestRelayer;
@@ -55,7 +55,7 @@ class Swap {
   constructor(
     swapParameters: SwapParameters,
     programUtxo: Utxo,
-    pda: PublicKey
+    pda: PublicKey,
   ) {
     this.swapParameters = swapParameters;
     this.programUtxo = programUtxo;
@@ -64,7 +64,7 @@ class Swap {
 
   static generateCommitmentHash(
     provider: LightProvider,
-    swapParameters: SwapParameters
+    swapParameters: SwapParameters,
   ) {
     return new BN(
       provider.poseidon.F.toString(
@@ -73,15 +73,15 @@ class Swap {
           swapParameters.swapTakerCommitmentHash,
           swapParameters.amountFrom,
           swapParameters.amountTo,
-        ])
-      )
+        ]),
+      ),
     );
   }
 
   static async create(
     amountFrom: BN,
     amountTo: BN,
-    lightProvider: LightProvider
+    lightProvider: LightProvider,
   ) {
     const slot = await lightProvider.connection.getSlot();
     const swapParameters: SwapParameters = {
@@ -93,7 +93,7 @@ class Swap {
     };
     swapParameters.swapMakerCommitmentHash = Swap.generateCommitmentHash(
       lightProvider,
-      swapParameters
+      swapParameters,
     );
     const programUtxo = new Utxo({
       poseidon: POSEIDON,
@@ -114,7 +114,7 @@ class Swap {
     let seed = swapParameters.swapMakerCommitmentHash.toArray("le", 32);
     const pda = findProgramAddressSync(
       [Buffer.from(seed)],
-      new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS")
+      new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"),
     )[0];
 
     return new Swap(swapParameters, programUtxo, pda);
@@ -125,7 +125,7 @@ class Swap {
     amountFrom: BN,
     amountTo: BN,
     lightProvider: LightProvider,
-    account: Account
+    account: Account,
   ) {
     const slot = await lightProvider.connection.getSlot();
     const swapParameters: SwapParameters = {
@@ -137,7 +137,7 @@ class Swap {
     };
     swapParameters.swapMakerCommitmentHash = Swap.generateCommitmentHash(
       lightProvider,
-      swapParameters
+      swapParameters,
     );
 
     const programUtxo = new Utxo({
@@ -159,7 +159,7 @@ class Swap {
     let seed = swapCommitmentHash.toArray("le", 32);
     const pda = findProgramAddressSync(
       [Buffer.from(seed)],
-      new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS")
+      new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"),
     )[0];
     return new Swap(swapParameters, programUtxo, pda);
   }
@@ -175,13 +175,13 @@ class Participant {
     this.pspInstance = new anchor.Program(
       IDL,
       new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"),
-      user.provider.provider
+      user.provider.provider,
     );
   }
 
   static async init(
     provider: anchor.AnchorProvider,
-    relayer: TestRelayer | Relayer
+    relayer: TestRelayer | Relayer,
   ) {
     const wallet = Keypair.generate();
     await airdropSol({
@@ -218,22 +218,18 @@ class Participant {
       [tx],
       this.user.provider.connection,
       this.user.provider.lookUpTables.versionedTransactionLookupTable,
-      this.user.provider.wallet
+      this.user.provider.wallet,
     );
   }
   async createSwap(
     amountFrom: BN,
     amountTo: BN,
-    action: Action = Action.SHIELD
+    action: Action = Action.SHIELD,
   ) {
     if (this.swap) {
       throw new Error("A swap is already in progress.");
     }
-    this.swap = await Swap.create(
-      amountFrom,
-      amountTo,
-      this.user.provider
-    );
+    this.swap = await Swap.create(amountFrom, amountTo, this.user.provider);
 
     const txHash = await this.user.storeAppUtxo({
       appUtxo: this.swap.programUtxo,
@@ -265,7 +261,7 @@ class Participant {
       [tx],
       this.user.provider.connection,
       this.user.provider.lookUpTables.versionedTransactionLookupTable,
-      this.user.provider.wallet
+      this.user.provider.wallet,
     );
 
     return {
@@ -279,7 +275,7 @@ class Participant {
     swapCommitmentHash: BN,
     amountFrom: BN,
     amountTo: BN,
-    action: Action = Action.SHIELD
+    action: Action = Action.SHIELD,
   ) {
     if (this.swap) {
       throw new Error("A swap is already in progress.");
@@ -289,14 +285,14 @@ class Participant {
       amountFrom,
       amountTo,
       this.user.provider,
-      this.user.account
+      this.user.account,
     );
     const txHash = await this.user.storeAppUtxo({
       appUtxo: this.swap.programUtxo,
       action,
     });
     const swapPdaAccountInfo = await this.pspInstance.account.swapPda.fetch(
-      this.swap.pda
+      this.swap.pda,
     );
     // @ts-ignore anchor type is not represented correctly
     if (swapPdaAccountInfo.isJoinable === false) {
@@ -327,7 +323,7 @@ class Participant {
       [tx],
       this.user.provider.connection,
       this.user.provider.lookUpTables.versionedTransactionLookupTable,
-      this.user.provider.wallet
+      this.user.provider.wallet,
     );
 
     return {
@@ -339,7 +335,7 @@ class Participant {
 
   async execute(programUtxo?: Utxo) {
     const swapPdaAccountInfo = await this.pspInstance.account.swapPda.fetch(
-      this.swap.pda
+      this.swap.pda,
     );
     // @ts-ignore anchor type is not represented correctly
     if (swapPdaAccountInfo.isJoinable === true) {
@@ -367,7 +363,7 @@ class Participant {
       },
       appDataIdl: IDL,
       verifierAddress: new PublicKey(
-        "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+        "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
       ),
       assetLookupTable: this.user.provider.lookUpTables.assetLookupTable,
       verifierProgramLookupTable:
@@ -378,16 +374,18 @@ class Participant {
       this.user.provider.poseidon,
       takerProgramUtxo,
       programUtxo,
-      false
+      false,
     );
     const circuitPath = path.join("build-circuit");
     // We use getBalance to sync the current merkle tree
     await this.user.getBalance();
     const merkleTree = this.user.provider.solMerkleTree.merkleTree;
-    this.swap.programUtxo.index =  merkleTree.indexOf(
-      this.swap.programUtxo.getCommitment(this.user.provider.poseidon)
-      );
-    takerProgramUtxo.index = merkleTree.indexOf(takerProgramUtxo.getCommitment(this.user.provider.poseidon));
+    this.swap.programUtxo.index = merkleTree.indexOf(
+      this.swap.programUtxo.getCommitment(this.user.provider.poseidon),
+    );
+    takerProgramUtxo.index = merkleTree.indexOf(
+      takerProgramUtxo.getCommitment(this.user.provider.poseidon),
+    );
 
     const programParameters: ProgramParameters = {
       inputs: {
@@ -411,7 +409,7 @@ class Participant {
       accounts: {
         swapPda: this.swap.pda,
       },
-      circuitName: "swaps"
+      circuitName: "swaps",
     };
 
     const makerOutUtxo = new Utxo({
@@ -430,7 +428,7 @@ class Participant {
         pubkey: swapTakeParameters.userPubkey,
         encryptionKeypair: {
           publicKey: new Uint8Array(
-            swapPdaAccountInfo.swap.swapTakerProgramUtxo.accountEncryptionPublicKey
+            swapPdaAccountInfo.swap.swapTakerProgramUtxo.accountEncryptionPublicKey,
           ),
         },
       } as Account,
@@ -448,7 +446,7 @@ class Participant {
     console.log(
       "maker balance before swap execution: " +
         (await this.user.getBalance()).totalSolBalance.toNumber() /
-          LAMPORTS_PER_SOL
+          LAMPORTS_PER_SOL,
     );
 
     let { txHash } = await this.user.executeAppUtxo({
@@ -500,12 +498,12 @@ describe("Test swaps", () => {
     console.log(
       "maker balance: " +
         (await swapMaker.user.getBalance()).totalSolBalance.toNumber() /
-          LAMPORTS_PER_SOL
+          LAMPORTS_PER_SOL,
     );
 
     let res = await swapMaker.createSwap(
       new BN(0.5 * LAMPORTS_PER_SOL),
-      new BN(0.25 * LAMPORTS_PER_SOL)
+      new BN(0.25 * LAMPORTS_PER_SOL),
     );
     console.log("Swap offer created");
 
@@ -518,13 +516,13 @@ describe("Test swaps", () => {
     console.log(
       "taker balance: " +
         (await swapTaker.user.getBalance()).totalSolBalance.toNumber() /
-          LAMPORTS_PER_SOL
+          LAMPORTS_PER_SOL,
     );
 
     await swapTaker.takeOffer(
       res.swap.swapParameters.swapMakerCommitmentHash,
       new BN(0.5 * LAMPORTS_PER_SOL),
-      new BN(0.25 * LAMPORTS_PER_SOL)
+      new BN(0.25 * LAMPORTS_PER_SOL),
     );
 
     console.log("Token shielded and offer taken");
@@ -535,13 +533,13 @@ describe("Test swaps", () => {
     console.log(
       "maker balance after swap: " +
         (await swapMaker.user.getBalance()).totalSolBalance.toNumber() /
-          LAMPORTS_PER_SOL
+          LAMPORTS_PER_SOL,
     );
 
     console.log(
       "taker balance after swap: " +
         (await swapTaker.user.getBalance()).totalSolBalance.toNumber() /
-          LAMPORTS_PER_SOL
+          LAMPORTS_PER_SOL,
     );
   });
 });
