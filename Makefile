@@ -1,6 +1,5 @@
 # List of subdirectories containing project Makefiles
-# PROJECT_DIRS := encrypted-messaging private-payments rock-paper-scissors streaming-payments
-PROJECT_DIRS := private-payments
+PROJECT_DIRS := private-payments streaming-payments encrypted-messaging rock-paper-scissors
 
 # Targets to pass to the sub-Makefiles
 TARGETS := all
