@@ -467,10 +467,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@lightprotocol/cli@^0.1.1-alpha.19":
-  version "0.1.1-alpha.19"
-  resolved "https://registry.yarnpkg.com/@lightprotocol/cli/-/cli-0.1.1-alpha.19.tgz#9ee796586caa8a5eb46c0d486c26bad42a8c8940"
-  integrity sha512-H3Iu3WaSu96NeF6VnJBs27wxcFTCva5PrIPHNOHOREvrPBLkhy5FG1WYLFeyr1Uc2MwMYozNECckghE3bKhZvA==
+"@lightprotocol/cli@^0.1.1-alpha.20":
+  version "0.1.1-alpha.20"
+  resolved "https://registry.yarnpkg.com/@lightprotocol/cli/-/cli-0.1.1-alpha.20.tgz#453faf7266f234f88ad224167bbc351ede071800"
+  integrity sha512-aw/ymuEzqDKbGHCVk+q/cCIncLpSNyRAsIHwWX9vliXP85hqK34tJNf6/Osxh1gTZTmoBR8xEo0JPJFX0LGBHw==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@lightprotocol/zk.js" "0.3.2-alpha.14"
