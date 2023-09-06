@@ -521,11 +521,12 @@ describe("Test multisig", () => {
       seed: new Uint8Array(32).fill(1).toString(),
       eddsa,
     });
-    const keypair1 = new Account({
-      poseidon,
-      seed: new Uint8Array(32).fill(12).toString(),
-      eddsa,
-    });
+//    const keypair1 = new Account({
+//      poseidon,
+//      seed: new Uint8Array(32).fill(12).toString(),
+//      eddsa,
+//    });
+    //
 
     // const signers = Array.from([
     //   await keypair.getEddsaPublicKey(),
@@ -565,7 +566,7 @@ describe("Test multisig", () => {
     console.log("\n\n");
 
     const withdrawalAmount = 1_000_000_0;
-    var outputUtxo = client.createUtxo({ solAmount: new BN(withdrawalAmount) });
+    let outputUtxo = client.createUtxo({ solAmount: new BN(withdrawalAmount) });
 
     // Deposit to multisig
     console.log("------------------------------------------");
@@ -579,9 +580,10 @@ describe("Test multisig", () => {
       "During transaction execution input utxos are invalidated, \n while output utxos are inserted into the merkle tree"
     );
     console.log("This is the multisig output utxo");
-    console.log(printUtxo(outputUtxo, poseidon, 0, "ouput"));
+    console.log(printUtxo(outputUtxo, poseidon, 0, "ouput", client));
 
     await deposit(outputUtxo, user);
+    console.log("DEPOSITED");
     console.log("------------------------------------------");
     console.log("\n\n");
 
@@ -696,7 +698,7 @@ describe("Test multisig", () => {
     const client1 = new MultiSigClient({
       provider: lightProvider,
       multiSigParams: client.multiSigParams,
-      signer: keypair1,
+      signer: keypair,
       queuedTransactions: [approvedTransaction],
       eddsa,
       poseidon,

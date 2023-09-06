@@ -170,11 +170,17 @@ export class MultiSig {
 
   static toArray(poseidon, threshold, nrSigners, publicKeyX, publicKeyY) {
     return [
-      threshold,
-      nrSigners,
-      ...publicKeyX.map((s) => poseidon.F.toObject(s)),
-      ...publicKeyY.map((s) => poseidon.F.toObject(s)),
+      new BN(threshold),
+      new BN(nrSigners),
+      ...publicKeyX.map((s) =>
+        new BN(poseidon.F.toString(s)).toArrayLike(Buffer, "le", 32)
+        ),
+      ...publicKeyY.map((s) =>
+        new BN(poseidon.F.toString(s)).toArrayLike(Buffer, "be", 32)
+        )
     ];
+
+
   }
 
   static getHash(poseidon, array) {

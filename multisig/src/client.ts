@@ -192,6 +192,7 @@ export class MultiSigClient {
     splAmount?: BN;
     solAmount?: BN;
   }) {
+    
     const appData = {
       threshold: this.multiSigParams.threshold,
       nrSigners: this.multiSigParams.nrSigners,
@@ -203,8 +204,20 @@ export class MultiSigClient {
       ),
     };
 
+    let bnArrayX: BN[] = [];
+    appData.publicKeyX.forEach(buffer => {
+      bnArrayX.push(new BN(buffer.toString('hex'), 16));
+    });
+    console.log("publicKeyX: ", bnArrayX.toString());
+
+    let bnArrayY: BN[] = [];
+    appData.publicKeyY.forEach(buffer => {
+          bnArrayY.push(new BN(buffer.toString('hex'), 16));
+    });
+    console.log("publicKeyY: ", bnArrayY.toString());
+
     if (splAmount && splAsset) {
-      var realSolAmount = new BN(0);
+      let realSolAmount = new BN(0);
       if (solAmount) {
         realSolAmount = solAmount;
       }
@@ -221,11 +234,6 @@ export class MultiSigClient {
           this.provider.lookUpTables.verifierProgramLookupTable,
       });
     } else if (solAmount) {
-      console.log("utxo.account.pubkey = ", this.signer.pubkey);
-      console.log(
-        "this.multiSigParams.account.pubkey = ",
-        this.multiSigParams.account.pubkey
-      );
       return new Utxo({
         poseidon: this.poseidon,
         assets: [SystemProgram.programId],
@@ -304,10 +312,11 @@ export class MultiSigClient {
     pubkeyDummy[0] = new Uint8Array(32).fill(0);
     pubkeyDummy[1] = new Uint8Array(32).fill(0);
 
-    const signatureDummy = await keypairDummy.signEddsa("123124");
+    const signatureDummy =  await keypairDummy.signEddsa("123"); // new Uint8Array(64).fill(0);
 
     // TODO: need to enforce correct order in signatures
-    // fill signatures up with dummy signatures
+    // fill signatures up with dummy
+
     for (
       let i = this.queuedTransactions[index].approvals.length;
       i < MAX_SIGNERS;
@@ -354,12 +363,23 @@ export class MultiSigClient {
     return appParams;
   }
 
+
+  static getAppInUtxoIndices(appUtxos: Utxo[]) {
+    let isAppInUtxo = [];
+    for (const i in appUtxos) {
+      let array = new Array(4).fill(new BN(0));
+      if (appUtxos[i].appData) {
+        array[i] = new BN(1);
+        isAppInUtxo.push(array);
+      }
+    }
+    return isAppInUtxo;
+  }
+
   async execute(index: number) {
     const appParams = await this.createAppParams(index);
     let params = this.queuedTransactions[0].transactionParams;
-    console.log("utxos = ", params.inputUtxos);
-    appParams.inputs.isAppInUtxo = Utxo.getAppInUtxoIndices(params.inputUtxos);
-    console.log("appParams.inputs = ", appParams.inputs);
+    appParams.inputs.isAppInUtxo = MultiSigClient.getAppInUtxoIndices(params.inputUtxos);
     // TODO: remove payer and send to relayer instead
     let tx = new Transaction({
       provider: this.provider,
@@ -396,8 +416,9 @@ export const printUtxo = (
   utxo: Utxo,
   poseidon: any,
   index: number,
-  input: string
-) => {
+  input: string,
+  multisig: MultiSigClient
+  ) => {
   let string = `-------------- ${input} Utxo ${index} --------------\n`;
   string += `Amount sol: ${utxo.amounts[0]} \n`;
   string += `Amount spl: ${
@@ -407,6 +428,9 @@ export const printUtxo = (
   string += `Commitment: ${utxo.getCommitment(poseidon)}\n`;
   string += `Verifier pubkey: ${utxo.verifierAddress.toBase58()}\n`;
   string += `Instruction hash: ${utxo.appDataHash.toString()}\n`;
+  if (multisig && multisig.multiSigParams && multisig.multiSigParams.appDataHash) {
+    string += `Multisig appData hash: ${multisig.multiSigParams.appDataHash.toString()}\n`;
+  }
   string += "------------------------------------------";
   return string;
 };

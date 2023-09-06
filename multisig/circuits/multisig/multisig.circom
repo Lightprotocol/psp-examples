@@ -222,6 +222,18 @@ var baseVariables = 2;
 signal input signerPubkeysX[nrMaxSigners];
 signal input signerPubkeysY[nrMaxSigners];
 
+
+/*
+    publicKeyX:  6644281471179892933802229155022839765304833764801720491487045480809438972122,
+    5358562625849482804134970895406582183797372077796132547325256205925261560540,
+0,0,0,0,0
+
+publicKeyY:  20510666718063333395745387506879035808381993737250146101039897781948849027766,
+3991754595539400798422577957876681906069706709940462066397603169299725738606,
+0,0,0,0,0
+
+*/
+
 for (var appUtxoIndex = 0; appUtxoIndex < nAppUtxos; appUtxoIndex++) {
     instructionHasher[appUtxoIndex] = Poseidon(16);
     instructionHasher[appUtxoIndex].inputs[0] <== threshold;
@@ -241,7 +253,6 @@ for (var appUtxoIndex = 0; appUtxoIndex < nAppUtxos; appUtxoIndex++) {
      }
 
     for (var inUtxoIndex = 0; inUtxoIndex < nIns; inUtxoIndex++) {
-
         log("appUtxoIndex = ", appUtxoIndex);
         log("inAppDataHash[", inUtxoIndex, "] = ", inAppDataHash[inUtxoIndex]);
         log("instructionHasher[", appUtxoIndex, "].out = ", instructionHasher[appUtxoIndex].out);
@@ -252,7 +263,6 @@ for (var appUtxoIndex = 0; appUtxoIndex < nAppUtxos; appUtxoIndex++) {
         checkInstructionHash[appUtxoIndex][inUtxoIndex].in[1] <== instructionHasher[appUtxoIndex].out;
         checkInstructionHash[appUtxoIndex][inUtxoIndex].enabled <== isAppInUtxo[appUtxoIndex][inUtxoIndex];
    }
-
 }
 signal input enabled[nrMaxSigners];
 signal input signatures[nrMaxSigners];
