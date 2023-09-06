@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
-import {BN} from "@coral-xyz/anchor";
-import {assert} from "chai";
+import { BN } from "@coral-xyz/anchor";
+import { assert } from "chai";
 import {
   Account,
   Action,
@@ -20,16 +20,26 @@ import {
   Utxo,
   verifierProgramStorageProgramId,
 } from "@lightprotocol/zk.js";
-import {Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram,} from "@solana/web3.js";
-import {bs58} from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import {IDL} from "../target/types/multisig";
-import {buildBabyjub, buildEddsa, buildPoseidonOpt} from "circomlibjs";
-import {MultiSig} from "../src";
-import {StorageUtils} from "../src/storageClient";
-import {Approval} from "../src/transaction";
-import {MultiSigClient} from "../src/client";
-import {MessageClient} from "../src/messageClient";
-import Squads, {DEFAULT_MULTISIG_PROGRAM_ID, getAuthorityPDA, Wallet,} from "@sqds/sdk";
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  SystemProgram,
+} from "@solana/web3.js";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { IDL } from "../target/types/multisig";
+import { buildBabyjub, buildEddsa, buildPoseidonOpt } from "circomlibjs";
+import { MultiSig } from "../src";
+import { StorageUtils } from "../src/storageClient";
+import { Approval } from "../src/transaction";
+import { MultiSigClient, printUtxo } from "../src/client";
+import { MessageClient } from "../src/messageClient";
+import Squads, {
+  DEFAULT_MULTISIG_PROGRAM_ID,
+  getAuthorityPDA,
+  Wallet,
+} from "@sqds/sdk";
 
 let circomlibjs = require("circomlibjs");
 
@@ -39,7 +49,6 @@ const verifierProgramId = new PublicKey(
   "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 );
 var POSEIDON;
-let KEYPAIR: Account;
 
 const RPC_URL = "http://127.0.0.1:8899";
 
@@ -48,10 +57,6 @@ describe("Test multisig", () => {
 
   before(async () => {
     POSEIDON = await buildPoseidonOpt();
-    KEYPAIR = new Account({
-      poseidon: POSEIDON,
-      seed: KEYPAIR_PRIVKEY.toString(),
-    });
   });
 
   it.skip("Poseidon Signature Poc", async () => {
@@ -483,27 +488,32 @@ describe("Test multisig", () => {
     const babyJub = await buildBabyjub();
     const F = babyJub.F;
 
+    const wallet = Keypair.generate();
     await airdropSol({
       connection: provider.connection,
-      lamports: LAMPORTS_PER_SOL,
-      recipientPublicKey: ADMIN_AUTH_KEYPAIR.publicKey,
+      lamports: 1e10,
+      recipientPublicKey: wallet.publicKey,
     });
 
-    const relayer = new TestRelayer({
-      relayerPubkey: ADMIN_AUTH_KEYPAIR.publicKey,
-      relayerRecipientSol: ADMIN_AUTH_KEYPAIR.publicKey,
-      relayerFee: new BN(100_000),
-      payer: ADMIN_AUTH_KEYPAIR,
+    let relayer = new TestRelayer({
+      relayerPubkey: wallet.publicKey,
+      relayerRecipientSol: wallet.publicKey,
+      relayerFee: new BN(100000),
+      payer: wallet,
     });
-    let lightProvider = await LightProvider.init({
-      wallet: ADMIN_AUTH_KEYPAIR,
+
+    // The light provider is a connection and wallet abstraction.
+    // The wallet is used to derive the seed for your shielded keypair with a signature.
+    var lightProvider = await LightProvider.init({
+      wallet,
       url: RPC_URL,
       relayer,
-      confirmConfig: confirmConfig,
+      confirmConfig,
     });
     lightProvider.addVerifierProgramPublickeyToLookUpTable(
       TransactionParameters.getVerifierProgramId(IDL)
     );
+
     const user: User = await User.init({ provider: lightProvider });
 
     const keypair = new Account({
@@ -522,13 +532,13 @@ describe("Test multisig", () => {
     //   await keypair1.getEddsaPublicKey(),
     // ]);
 
-    const signers = [keypair, keypair1];
+    const signers = [user.account, keypair];
     // Create multisig with
     // - threshold 2
     // - nrSigners 2
     const client = await MultiSigClient.createMultiSigParameters(
       2,
-      keypair, // is used to instantiate the MultiSigClient
+      user.account, // is used to instantiate the MultiSigClient
       signers,
       poseidon,
       eddsa,
@@ -568,8 +578,8 @@ describe("Test multisig", () => {
     console.log(
       "During transaction execution input utxos are invalidated, \n while output utxos are inserted into the merkle tree"
     );
-    // console.log("This is the multisig output utxo");
-    // console.log(printUtxo(outputUtxo, 0, "ouput"));
+    console.log("This is the multisig output utxo");
+    console.log(printUtxo(outputUtxo, poseidon, 0, "ouput"));
 
     await deposit(outputUtxo, user);
     console.log("------------------------------------------");
@@ -623,7 +633,6 @@ describe("Test multisig", () => {
     // txState = await squads.getTransaction(txState.publicKey);
     // await squads.executeTransaction(txState.publicKey);
     // squads._executeTransaction(transactionPDA, payer)
-
 
     lightProvider.solMerkleTree!.merkleTree = new MerkleTree(18, poseidon, [
       outputUtxo.getCommitment(poseidon),
@@ -707,64 +716,39 @@ describe("Test multisig", () => {
     console.log("------------------------------------------\n");
   });
 
-  async function deposit(
-    utxo: Utxo,
-    user: User
-  ) {
-    // let txParams = new TransactionParameters({
-    //   poseidon: lightProvider.poseidon,
-    //   outputUtxos: [utxo],
-    //   merkleTreePubkey: MERKLE_TREE_KEY,
-    //   sender: userTokenAccount,
-    //   senderFee: ADMIN_AUTH_KEYPAIR.publicKey,
-    //   verifier: new VerifierZero(),
-    //   lookUpTable: lightProvider.lookUpTable,
-    //   action: Action.SHIELD,
-    // });
-
-    const txParams = new TransactionParameters({
-      outputUtxos: [utxo],
-      senderSol: ADMIN_AUTH_KEYPAIR.publicKey,
-      transactionMerkleTreePubkey: MerkleTreeConfig.getTransactionMerkleTreePda(
-        new BN(0)
-      ),
-      eventMerkleTreePubkey: MerkleTreeConfig.getEventMerkleTreePda(new BN(0)),
-      action: Action.SHIELD,
-      poseidon: user.provider.poseidon,
-      verifierIdl: IDL_VERIFIER_PROGRAM_ZERO,
-    });
-
-    console.log("wallet.publicKey ", user.provider.wallet.publicKey.toBase58());
-
-    console.log(
-      "signingAddress: ",
-      txParams.accounts.signingAddress.toBase58()
-    );
-
-    console.log(
-      "relayerPubkey: ",
-      txParams.relayer.accounts.relayerPubkey.toBase58()
-    );
-
-    await user.storeAppUtxo({
+  async function deposit(utxo: Utxo, user: User) {
+    console.log("user.account.pubkey = ", user.account.pubkey);
+    let tx = await user.storeAppUtxo({
       appUtxo: utxo,
-      action: Action.SHIELD
+      action: Action.SHIELD,
     });
+    console.log("store program utxo transaction hash ", tx.txHash);
 
+    //   Error: UNIMPLEMENTED: Automatic encryption for utxos with application data is not implemented.
+    // const txParams = new TransactionParameters({
+    //   outputUtxos: [utxo],
+    //   senderSol: user.provider.wallet.publicKey,
+    //   transactionMerkleTreePubkey: MerkleTreeConfig.getTransactionMerkleTreePda(
+    //     new BN(0)
+    //   ),
+    //   eventMerkleTreePubkey: MerkleTreeConfig.getEventMerkleTreePda(new BN(0)),
+    //   action: Action.SHIELD,
+    //   poseidon: user.provider.poseidon,
+    //   verifierIdl: IDL_VERIFIER_PROGRAM_ZERO,
+    // });
     // let tx = new Transaction({
-    //   provider: lightProvider,
+    //   provider: user.provider,
     //   shuffleEnabled: false,
     //   params: txParams,
     // });
 
     // await tx.compileAndProve();
-    // return await tx.getInstructions();
+    // // return await tx.getInstructions();
     // try {
     //   let res = await tx.sendAndConfirmTransaction();
-    //   // console.log(res);
+    //   console.log(res);
     // } catch (e) {
     //   console.log(e);
-    //   console.log("AUTHORITY: ", AUTHORITY.toBase58());
     // }
 
     console.log("------------------------------------------\n");

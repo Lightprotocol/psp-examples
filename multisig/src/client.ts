@@ -16,7 +16,8 @@ import {
   MerkleTreeConfig,
   verifierProgramTwoProgramId,
   IDL_VERIFIER_PROGRAM_TWO,
-  updateMerkleTreeForTest, User,
+  updateMerkleTreeForTest,
+  User,
 } from "@lightprotocol/zk.js";
 import { MultiSig } from "./multisigParams";
 import { Scalar } from "ffjavascript";
@@ -162,7 +163,6 @@ export class MultiSigClient {
 
   static async createMultiSigParameters(
     threshold: number,
-    // user: User,
     signer: Account,
     signers: Account[],
     poseidon: any | undefined,
@@ -195,15 +195,13 @@ export class MultiSigClient {
     const appData = {
       threshold: this.multiSigParams.threshold,
       nrSigners: this.multiSigParams.nrSigners,
-      publicKeyX: this.multiSigParams.publicKeyX.map(
-        (s) => new BN(this.poseidon.F.toString(s))
+      publicKeyX: this.multiSigParams.publicKeyX.map((s) =>
+        new BN(this.poseidon.F.toString(s)).toArrayLike(Buffer, "be", 32)
       ),
-      publicKeyY: this.multiSigParams.publicKeyY.map(
-        (s) => new BN(this.poseidon.F.toString(s))
+      publicKeyY: this.multiSigParams.publicKeyY.map((s) =>
+        new BN(this.poseidon.F.toString(s)).toArrayLike(Buffer, "be", 32)
       ),
     };
-
-    console.log("appData: ", appData);
 
     if (splAmount && splAsset) {
       var realSolAmount = new BN(0);
@@ -223,11 +221,16 @@ export class MultiSigClient {
           this.provider.lookUpTables.verifierProgramLookupTable,
       });
     } else if (solAmount) {
+      console.log("utxo.account.pubkey = ", this.signer.pubkey);
+      console.log(
+        "this.multiSigParams.account.pubkey = ",
+        this.multiSigParams.account.pubkey
+      );
       return new Utxo({
         poseidon: this.poseidon,
-        assets: [SystemProgram.programId, SystemProgram.programId],
+        assets: [SystemProgram.programId],
         account: this.multiSigParams.account,
-        amounts: [solAmount, new BN(0)],
+        amounts: [solAmount],
         appData,
         appDataIdl: IDL,
         verifierAddress: verifierProgramId,
@@ -305,7 +308,11 @@ export class MultiSigClient {
 
     // TODO: need to enforce correct order in signatures
     // fill signatures up with dummy signatures
-    for (let i = this.queuedTransactions[index].approvals.length; i < MAX_SIGNERS; i++) {
+    for (
+      let i = this.queuedTransactions[index].approvals.length;
+      i < MAX_SIGNERS;
+      i++
+    ) {
       this.queuedTransactions[index].approvals.push(
         new Approval({
           publicKey: pubkeyDummy,
