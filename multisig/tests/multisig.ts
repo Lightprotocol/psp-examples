@@ -14,6 +14,7 @@ import {
   merkleTreeProgramId,
   Provider as LightProvider,
   TestRelayer,
+  ProgramUtxoBalance,
   Transaction,
   TransactionParameters,
   User,
@@ -32,8 +33,7 @@ import { IDL } from "../target/types/multisig";
 import { buildBabyjub, buildEddsa, buildPoseidonOpt } from "circomlibjs";
 import { MultiSig } from "../src";
 import { StorageUtils } from "../src/storageClient";
-import { Approval } from "../src/transaction";
-import { MultiSigClient, printUtxo } from "../src/client";
+import { Approval, MultiSigClient, printUtxo } from "../src";
 import { MessageClient } from "../src/messageClient";
 import Squads, {
   DEFAULT_MULTISIG_PROGRAM_ID,
@@ -48,16 +48,16 @@ const path = require("path");
 const verifierProgramId = new PublicKey(
   "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 );
-var POSEIDON;
+//var POSEIDON;
 
 const RPC_URL = "http://127.0.0.1:8899";
 
 describe("Test multisig", () => {
   const provider = setupAnchor();
 
-  before(async () => {
-    POSEIDON = await buildPoseidonOpt();
-  });
+//  before(async () => {
+//    POSEIDON = await buildPoseidonOpt();
+//  });
 
   it.skip("Poseidon Signature Poc", async () => {
     let eddsa = await buildEddsa();
@@ -504,7 +504,7 @@ describe("Test multisig", () => {
 
     // The light provider is a connection and wallet abstraction.
     // The wallet is used to derive the seed for your shielded keypair with a signature.
-    var lightProvider = await LightProvider.init({
+    let lightProvider = await LightProvider.init({
       wallet,
       url: RPC_URL,
       relayer,
@@ -521,31 +521,17 @@ describe("Test multisig", () => {
       seed: new Uint8Array(32).fill(1).toString(),
       eddsa,
     });
-//    const keypair1 = new Account({
-//      poseidon,
-//      seed: new Uint8Array(32).fill(12).toString(),
-//      eddsa,
-//    });
-    //
-
-    // const signers = Array.from([
-    //   await keypair.getEddsaPublicKey(),
-    //   await keypair1.getEddsaPublicKey(),
-    // ]);
 
     const signers = [user.account, keypair];
-    // Create multisig with
-    // - threshold 2
-    // - nrSigners 2
+
     const client = await MultiSigClient.createMultiSigParameters(
       2,
-      user.account, // is used to instantiate the MultiSigClient
+      user.account,
       signers,
       poseidon,
       eddsa,
       lightProvider
     );
-    console.log("client ");
 
     console.log("------------------------------------------");
     console.log("\t Created Multisig ");
@@ -587,82 +573,12 @@ describe("Test multisig", () => {
     console.log("------------------------------------------");
     console.log("\n\n");
 
-    // const recentBlockhash = (
-    //   await provider.provider.connection.getRecentBlockhash("confirmed")
-    // ).blockhash;
-    // const txMsg = new TransactionMessage({
-    //   payerKey: signer.publicKey,
-    //   instructions: [
-    //     ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 }),
-    //     depositIx[0],
-    //   ],
-    //   recentBlockhash: recentBlockhash,
-    // });
-
-    // const lookupTableAccount =
-    //   await provider.provider.connection.getAccountInfo(
-    //     relayer.accounts.lookUpTable,
-    //     "confirmed",
-    //   );
-
-    // const unpackedLookupTableAccount = AddressLookupTableAccount.deserialize(
-    //   lookupTableAccount.data,
-    // );
-
-    // const compiledTx = txMsg.compileToV0Message([
-    //   {
-    //     state: unpackedLookupTableAccount,
-    //     key: relayer.accounts.lookUpTable,
-    //     isActive: () => {
-    //       return true;
-    //     },
-    //   },
-    // ]);
-
-    // compiledTx.addressTableLookups[0].accountKey =
-    //   relayer.accounts.lookUpTable;
-
-    // const tx = new VersionedTransaction(compiledTx);
-    // let serializedTx = tx.serialize();
-
-    // TODO: get deposit instruction
-    // TODO: hack executeTransaction to send a versioned transaction instead of a regular one
-    // let txState = await squads.createTransaction(msPDA, 1);
-    // await squads.addInstruction(txState.publicKey, depositIx[0]);
-    // await squads.activateTransaction(txState.publicKey);
-    // await squads.approveTransaction(txState.publicKey);
-
-    // txState = await squads.getTransaction(txState.publicKey);
-    // await squads.executeTransaction(txState.publicKey);
-    // squads._executeTransaction(transactionPDA, payer)
-
-    lightProvider.solMerkleTree!.merkleTree = new MerkleTree(18, poseidon, [
-      outputUtxo.getCommitment(poseidon),
-    ]);
-
-    // await updateMerkleTreeForTest(ADMIN_AUTH_KEYPAIR, lightProvider.url);
-
-    // lightProvider.solMerkleTree = await SolMerkleTree.build({
-    //   pubkey: MERKLE_TREE_KEY,
-    //   poseidon,
-    // });
-
     const inputUtxos = [
       outputUtxo,
-      // new Utxo({ provider }),
-      // new Utxo({ poseidon }),
-      // new Utxo({ poseidon }),
     ];
     const outputUtxos = [
-      // new Utxo({ poseidon }),
-      // new Utxo({ poseidon }),
-      // new Utxo({ poseidon }),
-      // new Utxo({ poseidon }),
     ];
-    // // creates a transaction and queues it in the
-    let recipientFee = Keypair.generate().publicKey;
 
-    // signer 1 creates a multisig transaction
     await client.createMultiSigTransaction({
       inputUtxos,
       outputUtxos,
@@ -676,15 +592,6 @@ describe("Test multisig", () => {
       "The multisig transaction is encrypted to the shared encryption key and stored in a compressed account on Solana."
     );
     console.log(client.queuedTransactions[0]);
-    // console.log(
-    //   "Serialized multisig transaction length ",
-    //   client.queuedTransactions[0].toBytes().length.toString()
-    // );
-    // console.log("(We can probably optimize here.)");
-
-    // await user.getUtxoInbox();
-    // await user.provider.latestMerkleTree();
-
     const approvedTransaction = await client.approve(0);
 
     console.log("------------------------------------------");
@@ -703,17 +610,13 @@ describe("Test multisig", () => {
       eddsa,
       poseidon,
     });
-    // approves the multi sig transaction
+    // approves the multisig transaction
     await client1.approve(0);
 
     console.log("\n\n------------------------------------------");
     console.log("\t Executing Multisig Transaction ");
     console.log("------------------------------------------");
-    // console.log(
-    //   `Signer 2 executes the multisig shielded transaction, in this case a withdrawal of ${withdrawalAmount} to ${recipientFee.toBase58()}\n`
-    // );
 
-    // executes the approved transaction
     await client1.execute(0);
     console.log("------------------------------------------\n");
   });

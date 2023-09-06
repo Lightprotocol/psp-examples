@@ -180,7 +180,6 @@ export class MultiSig {
         )
     ];
 
-
   }
 
   static getHash(poseidon, array) {

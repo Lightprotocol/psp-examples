@@ -223,23 +223,19 @@ signal input signerPubkeysX[nrMaxSigners];
 signal input signerPubkeysY[nrMaxSigners];
 
 
-/*
-    publicKeyX:  6644281471179892933802229155022839765304833764801720491487045480809438972122,
-    5358562625849482804134970895406582183797372077796132547325256205925261560540,
-0,0,0,0,0
+log("signerPubkeysX[0]=",signerPubkeysX[0]);
+log("signerPubkeysY[0]=",signerPubkeysY[0]);
 
-publicKeyY:  20510666718063333395745387506879035808381993737250146101039897781948849027766,
-3991754595539400798422577957876681906069706709940462066397603169299725738606,
-0,0,0,0,0
+log("signerPubkeysX[1]=",signerPubkeysX[1]);
+log("signerPubkeysY[1]=",signerPubkeysY[1]);
 
-*/
 
 for (var appUtxoIndex = 0; appUtxoIndex < nAppUtxos; appUtxoIndex++) {
     instructionHasher[appUtxoIndex] = Poseidon(16);
     instructionHasher[appUtxoIndex].inputs[0] <== threshold;
     instructionHasher[appUtxoIndex].inputs[1] <== nrSigners;
     log("instructionHasher[", appUtxoIndex, "][",  0, "] = ", instructionHasher[appUtxoIndex].inputs[0]);
-    log("instructionHasher[", appUtxoIndex,  "][", 0,  "] = ", instructionHasher[appUtxoIndex].inputs[1]);
+    log("instructionHasher[", appUtxoIndex,  "][", 1,  "] = ", instructionHasher[appUtxoIndex].inputs[1]);
 
      for (var i = baseVariables; i < nrMaxSigners + baseVariables; i++) {
         instructionHasher[appUtxoIndex].inputs[i] <== signerPubkeysX[i - baseVariables];
@@ -275,19 +271,16 @@ for (var i = 0; i < nrMaxSigners; i++) {
 checkIndices.indices[i] <== enabled[i];
 }
 
-
-
-
 component sigVerifier[nrMaxSigners];
 for(var i = 0; i < nrMaxSigners; i++) {
-sigVerifier[i] = EdDSAPoseidonVerifier();
-sigVerifier[i].enabled <== enabled[i] * signerPubkeysX[i];
-sigVerifier[i].Ax <== signerPubkeysX[i];
-sigVerifier[i].Ay <== signerPubkeysY[i];
-sigVerifier[i].S <== signatures[i];
-sigVerifier[i].R8x <== r8x[i];
-sigVerifier[i].R8y <== r8y[i];
-sigVerifier[i].M <== transactionHasher.out;
+    sigVerifier[i] = EdDSAPoseidonVerifier();
+    sigVerifier[i].enabled <== enabled[i] * signerPubkeysX[i];
+    sigVerifier[i].Ax <== signerPubkeysX[i];
+    sigVerifier[i].Ay <== signerPubkeysY[i];
+    sigVerifier[i].S <== signatures[i];
+    sigVerifier[i].R8x <== r8x[i];
+    sigVerifier[i].R8y <== r8y[i];
+    sigVerifier[i].M <== transactionHasher.out;
 }
 }
 

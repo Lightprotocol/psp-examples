@@ -312,16 +312,9 @@ export class MultiSigClient {
     pubkeyDummy[0] = new Uint8Array(32).fill(0);
     pubkeyDummy[1] = new Uint8Array(32).fill(0);
 
-    const signatureDummy =  await keypairDummy.signEddsa("123"); // new Uint8Array(64).fill(0);
+    const signatureDummy = new Uint8Array(64).fill(0); //await keypairDummy.signEddsa("123");
 
-    // TODO: need to enforce correct order in signatures
-    // fill signatures up with dummy
-
-    for (
-      let i = this.queuedTransactions[index].approvals.length;
-      i < MAX_SIGNERS;
-      i++
-    ) {
+    for (let i = this.queuedTransactions[index].approvals.length; i < MAX_SIGNERS; i++) {
       this.queuedTransactions[index].approvals.push(
         new Approval({
           publicKey: pubkeyDummy,
@@ -334,15 +327,23 @@ export class MultiSigClient {
     const appParams = {
       inputs: {
         isAppInUtxo: [],
-        threshold: this.multiSigParams.threshold.toString(),
-        nrSigners: this.multiSigParams.nrSigners.toString(),
-        enabled: [1, 1, ...new Array(MAX_SIGNERS - 2).fill(0)], // TODO: make variable
+        threshold: this.multiSigParams.threshold,
+        nrSigners: this.multiSigParams.nrSigners,
+//        signerPubkeysX: this.multiSigParams.publicKeyX.map((s) =>
+//        new BN(this.poseidon.F.toString(s)).toArrayLike(Buffer, "le", 32)
+//        ),
+//        signerPubkeysY: this.multiSigParams.publicKeyX.map((s) =>
+//        new BN(this.poseidon.F.toString(s)).toArrayLike(Buffer, "le", 32)
+//        ),
         signerPubkeysX: this.queuedTransactions[index].approvals.map(
-          (approval) => this.poseidon.F.toObject(approval.publicKey[0])
-        ),
+          (approval) => this.poseidon.F.toObject(approval.publicKey[0])),
         signerPubkeysY: this.queuedTransactions[index].approvals.map(
-          (approval) => this.poseidon.F.toObject(approval.publicKey[1])
-        ),
+          (approval) => this.poseidon.F.toObject(approval.publicKey[1])),
+        enabled: [1, 1, ...new Array(MAX_SIGNERS - 2).fill(0)],
+        signatures: this.queuedTransactions[index].approvals.map(
+          (approval) => this.eddsa.unpackSignature(approval.signature).S
+          ),
+
         r8x: this.queuedTransactions[index].approvals.map((approval) =>
           this.poseidon.F.toObject(
             this.eddsa.unpackSignature(approval.signature).R8[0]
@@ -353,13 +354,11 @@ export class MultiSigClient {
             this.eddsa.unpackSignature(approval.signature).R8[1]
           )
         ),
-        signatures: this.queuedTransactions[index].approvals.map(
-          (approval) => this.eddsa.unpackSignature(approval.signature).S
-        ),
       },
       verifierIdl: IDL,
       path: circuitPath,
     };
+    console.log("🐥 appParams: ", appParams);
     return appParams;
   }
 
@@ -380,32 +379,16 @@ export class MultiSigClient {
     const appParams = await this.createAppParams(index);
     let params = this.queuedTransactions[0].transactionParams;
     appParams.inputs.isAppInUtxo = MultiSigClient.getAppInUtxoIndices(params.inputUtxos);
-    // TODO: remove payer and send to relayer instead
+
     let tx = new Transaction({
       provider: this.provider,
-      shuffleEnabled: false,
+      shuffleEnabled: true,
       params,
       appParams,
     });
-    // TODO: remove when we have relayer only for testing
-    // txParams.payer = ADMIN_AUTH_KEYPAIR;
-
-    tx.transactionInputs.rootIndex = new BN(0);
 
     await tx.compileAndProve();
     await tx.sendAndConfirmTransaction();
-
-    // await tx.compile();
-    // await tx.provider.provider.connection.confirmTransaction(
-    //   await tx.provider.provider.connection.requestAirdrop(
-    //     tx.params.accounts.authority,
-    //     1_000_000_000
-    //   ),
-    //   "confirmed"
-    // );
-    // await tx.getProof();
-    // await tx.getAppProof();
-    // await tx.sendAndConfirmTransaction();
 
     // await tx.checkBalances();
     // await updateMerkleTreeForTest(ADMIN_AUTH_KEYPAIR, this.provider.url);
