@@ -10,7 +10,6 @@ pub use processor::*;
 pub mod verifying_key_multisig;
 pub use verifying_key_multisig::*;
 
-
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[constant]
@@ -47,7 +46,7 @@ pub mod multisig {
         let pool_type = [0u8; 32];
         let mut program_id_hash = hash(&ctx.program_id.to_bytes()).to_bytes();
         program_id_hash[0] = 0;
-        
+
         let mut checked_inputs: [[u8; 32]; NR_CHECKED_INPUTS] = [[0u8; 32]; NR_CHECKED_INPUTS];
         checked_inputs[0] = program_id_hash;
         checked_inputs[1] = inputs_des.transaction_hash;
@@ -85,10 +84,6 @@ pub mod multisig {
         ctx: Context<'a, 'b, 'c, 'info, LightInstructionThird<'info, NR_CHECKED_INPUTS>>,
         inputs: Vec<u8>,
     ) -> Result<()> {
-        msg!(
-            "checked inputs {:?}",
-            ctx.accounts.verifier_state.checked_public_inputs[2]
-        );
         verify_programm_proof(&ctx, &inputs)?;
         cpi_verifier_two(&ctx, &inputs)
     }

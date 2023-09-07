@@ -5,21 +5,20 @@ use anchor_lang::prelude::*;
  * DO NOT EDIT MANUALLY.
  * THE FILE WILL BE OVERWRITTEN EVERY TIME THE LIGHT CLI BUILD IS RUN.
  */
-    #[allow(non_camel_case_types)]
-    // helper struct to create anchor idl with u256 type
-    #[account]
-    #[derive(Debug, Copy, PartialEq)]
-    pub struct u256 {
-        pub x: [u8; 32],
-    }
- 
+#[allow(non_camel_case_types)]
+// helper struct to create anchor idl with u256 type
+#[account]
+#[derive(Debug, Copy, PartialEq)]
+pub struct u256 {
+    pub x: [u8; 32],
+}
+
 pub const NR_CHECKED_INPUTS: usize = 2;
 
 #[allow(non_snake_case)]
 #[derive(Debug)]
 #[account]
-pub struct InstructionDataLightInstructionSecond {
-}
+pub struct InstructionDataLightInstructionSecond {}
 
 #[allow(non_snake_case)]
 #[derive(Debug, Copy, PartialEq)]
@@ -34,8 +33,8 @@ pub struct Utxo {
     pub account_encryption_public_key: [u8; 32],
     pub threshold: u256,
     pub nrSigners: u256,
-    pub public_key_x: [[u8; 32]; 7],
-    pub public_key_y: [[u8; 32]; 7],
+    pub public_key_x: [u256; 7],
+    pub public_key_y: [u256; 7],
 }
 
 #[allow(non_snake_case)]
@@ -44,6 +43,6 @@ pub struct Utxo {
 pub struct UtxoAppData {
     pub threshold: u256,
     pub nrSigners: u256,
-    pub public_key_x: [[u8; 32]; 7],
-    pub public_key_y: [[u8; 32]; 7],
+    pub public_key_x: [u256; 7],
+    pub public_key_y: [u256; 7],
 }

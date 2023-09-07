@@ -223,30 +223,23 @@ signal input signerPubkeysX[nrMaxSigners];
 signal input signerPubkeysY[nrMaxSigners];
 
 
-log("signerPubkeysX[0]=",signerPubkeysX[0]);
-log("signerPubkeysY[0]=",signerPubkeysY[0]);
-
-log("signerPubkeysX[1]=",signerPubkeysX[1]);
-log("signerPubkeysY[1]=",signerPubkeysY[1]);
-
-
 for (var appUtxoIndex = 0; appUtxoIndex < nAppUtxos; appUtxoIndex++) {
     instructionHasher[appUtxoIndex] = Poseidon(16);
     instructionHasher[appUtxoIndex].inputs[0] <== threshold;
     instructionHasher[appUtxoIndex].inputs[1] <== nrSigners;
-    log("instructionHasher[", appUtxoIndex, "][",  0, "] = ", instructionHasher[appUtxoIndex].inputs[0]);
-    log("instructionHasher[", appUtxoIndex,  "][", 1,  "] = ", instructionHasher[appUtxoIndex].inputs[1]);
-
+    log("instructionHasher[0] = ", instructionHasher[appUtxoIndex].inputs[0]);
+    log("instructionHasher[0] = ", instructionHasher[appUtxoIndex].inputs[1]);
+    
      for (var i = baseVariables; i < nrMaxSigners + baseVariables; i++) {
-        instructionHasher[appUtxoIndex].inputs[i] <== signerPubkeysX[i - baseVariables];
-        log("instructionHasher[", appUtxoIndex, "][", i, "] = ", instructionHasher[appUtxoIndex].inputs[i]);
+       instructionHasher[appUtxoIndex].inputs[i] <== signerPubkeysX[i - baseVariables];
+       log("instructionHasher[", appUtxoIndex, "][", i, "] = ", instructionHasher[appUtxoIndex].inputs[i]);
      }
 
      // if need more max signers hash x and y
-     for (var i = baseVariables + nrMaxSigners; i < nrMaxSigners * 2 + baseVariables; i++) {
-        instructionHasher[appUtxoIndex].inputs[i] <== signerPubkeysY[i - baseVariables - nrMaxSigners];
-        log("instructionHasher[", appUtxoIndex, "][", i, "] = ", instructionHasher[appUtxoIndex].inputs[i]);
-     }
+    for (var i = baseVariables + nrMaxSigners; i < nrMaxSigners * 2 + baseVariables; i++) {
+       instructionHasher[appUtxoIndex].inputs[i] <== signerPubkeysY[i - baseVariables - nrMaxSigners];
+       log("instructionHasher[", appUtxoIndex, "][", i, "] = ", instructionHasher[appUtxoIndex].inputs[i]);
+    }
 
     for (var inUtxoIndex = 0; inUtxoIndex < nIns; inUtxoIndex++) {
         log("appUtxoIndex = ", appUtxoIndex);
@@ -273,14 +266,14 @@ checkIndices.indices[i] <== enabled[i];
 
 component sigVerifier[nrMaxSigners];
 for(var i = 0; i < nrMaxSigners; i++) {
-    sigVerifier[i] = EdDSAPoseidonVerifier();
-    sigVerifier[i].enabled <== enabled[i] * signerPubkeysX[i];
-    sigVerifier[i].Ax <== signerPubkeysX[i];
-    sigVerifier[i].Ay <== signerPubkeysY[i];
-    sigVerifier[i].S <== signatures[i];
-    sigVerifier[i].R8x <== r8x[i];
-    sigVerifier[i].R8y <== r8y[i];
-    sigVerifier[i].M <== transactionHasher.out;
+   sigVerifier[i] = EdDSAPoseidonVerifier();
+   sigVerifier[i].enabled <== enabled[i] * signerPubkeysX[i];
+   sigVerifier[i].Ax <== signerPubkeysX[i];
+   sigVerifier[i].Ay <== signerPubkeysY[i];
+   sigVerifier[i].S <== signatures[i];
+   sigVerifier[i].R8x <== r8x[i];
+   sigVerifier[i].R8y <== r8y[i];
+   sigVerifier[i].M <== transactionHasher.out;
 }
 }
 

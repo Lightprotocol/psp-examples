@@ -55,9 +55,9 @@ const RPC_URL = "http://127.0.0.1:8899";
 describe("Test multisig", () => {
   const provider = setupAnchor();
 
-//  before(async () => {
-//    POSEIDON = await buildPoseidonOpt();
-//  });
+  //  before(async () => {
+  //    POSEIDON = await buildPoseidonOpt();
+  //  });
 
   it.skip("Poseidon Signature Poc", async () => {
     let eddsa = await buildEddsa();
@@ -573,11 +573,8 @@ describe("Test multisig", () => {
     console.log("------------------------------------------");
     console.log("\n\n");
 
-    const inputUtxos = [
-      outputUtxo,
-    ];
-    const outputUtxos = [
-    ];
+    const inputUtxos = [outputUtxo];
+    const outputUtxos = [];
 
     await client.createMultiSigTransaction({
       inputUtxos,
@@ -591,7 +588,7 @@ describe("Test multisig", () => {
     console.log(
       "The multisig transaction is encrypted to the shared encryption key and stored in a compressed account on Solana."
     );
-    console.log(client.queuedTransactions[0]);
+    //    console.log(client.queuedTransactions[0]);
     const approvedTransaction = await client.approve(0);
 
     console.log("------------------------------------------");
@@ -622,13 +619,11 @@ describe("Test multisig", () => {
   });
 
   async function deposit(utxo: Utxo, user: User) {
-    console.log("user.account.pubkey = ", user.account.pubkey);
     let tx = await user.storeAppUtxo({
       appUtxo: utxo,
       action: Action.SHIELD,
     });
     console.log("store program utxo transaction hash ", tx.txHash);
-
     //   Error: UNIMPLEMENTED: Automatic encryption for utxos with application data is not implemented.
     // const txParams = new TransactionParameters({
     //   outputUtxos: [utxo],
