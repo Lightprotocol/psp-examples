@@ -57,6 +57,10 @@ runs:
       shell: bash
       run: |
         echo 'RUSTC_HASH=${{ steps.rust_toolchain.outputs.rustc_hash }}' >> $GITHUB_ENV
+    - name: Install cargo-expand
+      shell: bash
+      run: |
+        cargo install cargo-expand
 
     # Install Solana Toolchain
     - name: Cache Solana Install
