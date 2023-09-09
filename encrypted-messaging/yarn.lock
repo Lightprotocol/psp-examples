@@ -500,7 +500,7 @@
     ffjavascript "^0.2.60"
     snarkjs "^0.7.0"
 
-"@lightprotocol/zk.js@0.3.2-alpha.14", "@lightprotocol/zk.js@^0.3.2-alpha.14":
+"@lightprotocol/zk.js@0.3.2-alpha.14":
   version "0.3.2-alpha.14"
   resolved "https://registry.yarnpkg.com/@lightprotocol/zk.js/-/zk.js-0.3.2-alpha.14.tgz#48765876f128055fcebf048474a1734990a0ad62"
   integrity sha512-DmxyNu2MwZZElMo0eNqJdGrDdXUUSVEEw9Ap+CPbg+xMqiZ4+FQE7pOMF2tR4RIIkqTXdvsG0Y/LoIiJ4B+gYg==
@@ -581,9 +581,9 @@
     fastq "^1.6.0"
 
 "@npmcli/agent@^2.0.0":
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/@npmcli/agent/-/agent-2.1.0.tgz#24b5ddb434cdbd94d553e6cac761638e0c49d36c"
-  integrity sha512-/HFJP3a/DzgIg+6TWVee3bQmnBcWeKKYE9DKQqS8SWpAV8oYDTn/zkDM8iQ7bWI6kDDgNfHOlEFZZpN/UXMwig==
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@npmcli/agent/-/agent-2.1.1.tgz#31095663b8feef27ec3eccd5254a35b8fc70353a"
+  integrity sha512-6RlbiOAi6L6uUYF4/CDEkDZQnKw0XDsFJVrEpnib8rAx2WRMOsUyAdgnvDpX/fdkDWxtqE+NHwF465llI2wR0g==
   dependencies:
     http-proxy-agent "^7.0.0"
     https-proxy-agent "^7.0.1"
@@ -913,9 +913,9 @@
     fast-levenshtein "^3.0.0"
 
 "@oclif/plugin-plugins@^3.0.1":
-  version "3.4.2"
-  resolved "https://registry.yarnpkg.com/@oclif/plugin-plugins/-/plugin-plugins-3.4.2.tgz#63888867b9a29f66a38560e175cea3709fc934d4"
-  integrity sha512-0goaZY8XOk6gH/c5nZ4k3DYnNdY0ZHCqe2bvSaT7rH2UCgeo/sS70gGYqbnn+TVIVxN6mIL9ogzsLtpQy02U3A==
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/@oclif/plugin-plugins/-/plugin-plugins-3.5.0.tgz#48f4ec8d17bd3c76e87da581e40ef8f05b03817d"
+  integrity sha512-eE1P5jaFLLAeJvs2ilnGIHbxlhr7Z+3qgn/2uQoAGyozbSltAVkRRQ0LGPrGsqiwdgpgSpR2fPcvaskFanKfyA==
   dependencies:
     "@oclif/core" "^2.11.10"
     chalk "^4.1.2"
@@ -1024,9 +1024,9 @@
     tuf-js "^1.1.7"
 
 "@sigstore/tuf@^2.1.0":
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/@sigstore/tuf/-/tuf-2.1.0.tgz#8bf99444e431ba36198d8f742296b48170dcb486"
-  integrity sha512-BUoVCx+7Wj+8moEGvUU2MyBI+f93lmg1CLmoG6KrhQMeDyAG8HAZNk+YRCNuvwvSDCfPhwsj37Bg63/Q+bnGsw==
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@sigstore/tuf/-/tuf-2.2.0.tgz#ef636239687e41af3f2ce10667ab88f5ca6165b3"
+  integrity sha512-KKATZ5orWfqd9ZG6MN8PtCIx4eevWSuGRKQvofnWXRpyMyUEpmrzg5M5BrCpjM+NfZ0RbNGOh5tCz/P2uoRqOA==
   dependencies:
     "@sigstore/protobuf-specs" "^0.2.1"
     tuf-js "^2.1.0"
@@ -1205,9 +1205,9 @@
   integrity sha512-VOVRLM1mBxIRxydiViqPcKn6MIxZytrbMpd6RJLIWKxUNr3zux8no0Oc7kJx0WAPIitgZ0gkrDS+btlqQpubpw==
 
 "@types/cli-progress@^3.11.0":
-  version "3.11.1"
-  resolved "https://registry.yarnpkg.com/@types/cli-progress/-/cli-progress-3.11.1.tgz#93664d42a0b7b2fc495bec8a470c60001d3c3d68"
-  integrity sha512-d9iA+0uys9N6wV/SvZkDEWMYwv+e/mhWPLa6lncQ1ZqrC3mXHnDmidanVGoVGnmCQ3mCxyu9S09Y2s18u5wL5w==
+  version "3.11.2"
+  resolved "https://registry.yarnpkg.com/@types/cli-progress/-/cli-progress-3.11.2.tgz#c8ff27cf89b46bfbb7faf140432c464d3a62ec4e"
+  integrity sha512-Yt/8rEJalfa9ve2SbfQnwFHrc9QF52JIZYHW3FDaTMpkCvnns26ueKiPHDxyJ0CS//IqjMINTx7R5Xa7k7uFHQ==
   dependencies:
     "@types/node" "*"
 

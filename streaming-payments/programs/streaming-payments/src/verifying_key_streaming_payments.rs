@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use groth16_solana::groth16::Groth16Verifyingkey;
 
-pub const VERIFYINGKEY_PSP_PAYMENT_STREAMING: Groth16Verifyingkey = Groth16Verifyingkey {
+pub const VERIFYINGKEY_STREAMING_PAYMENTS: Groth16Verifyingkey = Groth16Verifyingkey {
     nr_pubinputs: 3,
     vk_alpha_g1: [
         45, 77, 154, 167, 227, 2, 217, 223, 65, 116, 157, 85, 7, 148, 157, 5, 219, 234, 51, 251,
@@ -31,13 +31,13 @@ pub const VERIFYINGKEY_PSP_PAYMENT_STREAMING: Groth16Verifyingkey = Groth16Verif
     ],
 
     vk_delta_g2: [
-        3, 217, 119, 153, 126, 240, 200, 176, 234, 231, 196, 249, 226, 153, 122, 175, 212, 132,
-        186, 193, 68, 160, 65, 37, 48, 137, 171, 185, 115, 15, 210, 164, 29, 245, 181, 57, 54, 232,
-        85, 163, 41, 218, 56, 1, 24, 61, 209, 70, 217, 218, 197, 43, 105, 16, 211, 103, 225, 97,
-        243, 112, 12, 108, 124, 45, 45, 157, 233, 139, 200, 209, 242, 125, 102, 166, 246, 28, 165,
-        212, 77, 191, 157, 1, 130, 233, 160, 42, 121, 24, 155, 31, 166, 39, 29, 196, 143, 125, 22,
-        61, 87, 43, 120, 31, 100, 113, 62, 212, 134, 102, 149, 89, 245, 173, 70, 121, 81, 133, 137,
-        68, 86, 7, 1, 103, 35, 175, 234, 42, 11, 240,
+        13, 144, 221, 165, 105, 204, 117, 159, 207, 122, 75, 183, 181, 211, 206, 90, 102, 31, 156,
+        50, 138, 110, 236, 77, 60, 79, 154, 185, 236, 164, 201, 129, 30, 208, 13, 109, 246, 250,
+        165, 194, 197, 103, 147, 224, 120, 65, 147, 116, 249, 165, 186, 50, 135, 11, 14, 53, 55,
+        46, 83, 123, 112, 79, 19, 146, 21, 218, 3, 235, 143, 235, 222, 65, 98, 241, 68, 61, 73, 16,
+        101, 194, 9, 214, 43, 13, 141, 65, 255, 65, 135, 180, 195, 6, 96, 182, 25, 179, 5, 90, 179,
+        172, 221, 143, 81, 109, 187, 133, 151, 142, 135, 79, 198, 109, 192, 131, 78, 130, 178, 121,
+        23, 27, 195, 102, 57, 22, 17, 187, 12, 135,
     ],
 
     vk_ic: &[
@@ -68,7 +68,7 @@ pub const VERIFYINGKEY_PSP_PAYMENT_STREAMING: Groth16Verifyingkey = Groth16Verif
     ],
 };
 #[account]
-pub struct ZKpspPaymentStreamingProofInputs {
+pub struct ZKstreamingPaymentsProofInputs {
     public_app_verifier: u8,
     transaction_hash: u8,
     current_slot: u8,
@@ -99,13 +99,13 @@ pub struct ZKpspPaymentStreamingProofInputs {
     is_out_utxo: [u8; 4],
 }
 #[account]
-pub struct ZKpspPaymentStreamingPublicInputs {
+pub struct ZKstreamingPaymentsPublicInputs {
     public_app_verifier: u8,
     transaction_hash: u8,
     current_slot: u8,
 }
 #[account]
-pub struct InstructionDataLightInstructionPspPaymentStreamingSecond {
+pub struct InstructionDataLightInstructionStreamingPaymentsSecond {
     public_app_verifier: [u8; 32],
     transaction_hash: [u8; 32],
     current_slot: [u8; 32],

@@ -5,8 +5,8 @@ pub mod light_utils;
 pub use light_utils::*;
 pub mod processor;
 pub use processor::*;
-pub mod verifying_key_psp_payment_streaming;
-pub use verifying_key_psp_payment_streaming::*;
+pub mod verifying_key_streaming_payments;
+pub use verifying_key_streaming_payments::*;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -14,7 +14,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub const PROGRAM_ID: &str = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS";
 
 #[program]
-pub mod psp_payment_streaming {
+pub mod streaming_payments {
     use light_verifier_sdk::light_transaction::{Amounts, Proof};
     use solana_program::sysvar;
 

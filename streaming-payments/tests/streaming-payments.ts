@@ -27,7 +27,7 @@ import {
 } from "@solana/web3.js";
 
 import { buildPoseidonOpt } from "circomlibjs";
-import { IDL } from "../target/types/psp_payment_streaming";
+import { IDL } from "../target/types/streaming_payments";
 
 const path = require("path");
 
@@ -128,7 +128,7 @@ describe("Streaming Payments tests", () => {
       },
       path: circuitPath,
       verifierIdl: IDL,
-      circuitName: "pspPaymentStreaming",
+      circuitName: "streamingPayments",
     };
 
     const txParams = new TransactionParameters({
@@ -270,7 +270,7 @@ describe("Streaming Payments tests", () => {
             },
             verifierIdl: IDL,
             path: circuitPath,
-            circuitName: "pspPaymentStreaming"
+            circuitName: "streamingPayments"
           };
 
           const index = merkleTree.indexOf(
@@ -310,7 +310,7 @@ describe("Streaming Payments tests", () => {
             },
             verifierIdl: IDL,
             path: circuitPath,
-            circuitName: "pspPaymentStreaming"
+            circuitName: "streamingPayments"
           };
           const inUtxo = this.latestStreamUtxo;
           const outUtxo = new Utxo({

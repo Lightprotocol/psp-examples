@@ -6,7 +6,7 @@ edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "psp_payment_streaming"
+name = "streaming_payments"
 
 [features]
 no-entrypoint = []
