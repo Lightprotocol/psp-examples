@@ -1,4 +1,4 @@
-name: PSP Examples
+name: swap
 
 on:
   push:
@@ -27,18 +27,6 @@ jobs:
         solanaVersion: "v1.16.9"
         anchorVersion: "0.28.0"
         nodeVersion: ${{ matrix.nodeVersion }}
-    
-    - name: private-payments
-      run: make private-payments
-
-    - name: streaming-payments
-      run: make streaming-payments
-
-    - name: encrypted-messaging
-      run: make encrypted-messaging
-
-    - name: rock-paper-scissors
-      run: make rock-paper-scissors
       
     - name: swap
       run: make swap

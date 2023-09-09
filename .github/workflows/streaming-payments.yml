@@ -1,4 +1,4 @@
-name: PSP Examples
+name: streaming-payments
 
 on:
   push:

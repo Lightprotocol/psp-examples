@@ -1,4 +1,4 @@
-name: PSP Examples
+name: private-payments
 
 on:
   push:

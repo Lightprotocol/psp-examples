@@ -1,4 +1,4 @@
-name: PSP Examples
+name: rock-paper-scissors
 
 on:
   push:
