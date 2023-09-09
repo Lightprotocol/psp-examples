@@ -1,0 +1,32 @@
+name: PSP Examples
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        nodeVersion: [18]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Workspace
+      uses: ./.github/actions/setup-workspace
+      with:
+        solanaVersion: "v1.16.9"
+        anchorVersion: "0.28.0"
+        nodeVersion: ${{ matrix.nodeVersion }}
+
+    - name: rock-paper-scissors
+      run: make rock-paper-scissors      

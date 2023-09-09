@@ -19,7 +19,7 @@ jobs:
         nodeVersion: [18]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup Workspace
       uses: ./.github/actions/setup-workspace
@@ -27,18 +27,6 @@ jobs:
         solanaVersion: "v1.16.9"
         anchorVersion: "0.28.0"
         nodeVersion: ${{ matrix.nodeVersion }}
-    
-    - name: private-payments
-      run: make private-payments
 
     - name: streaming-payments
       run: make streaming-payments
-
-    - name: encrypted-messaging
-      run: make encrypted-messaging
-
-    - name: rock-paper-scissors
-      run: make rock-paper-scissors
-      
-    - name: swap
-      run: make swap
