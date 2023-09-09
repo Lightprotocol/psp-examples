@@ -28,5 +28,17 @@ jobs:
         anchorVersion: "0.28.0"
         nodeVersion: ${{ matrix.nodeVersion }}
     
-    - name: Run PSP examples
-      run: make
+    - name: private-payments
+      run: make private-payments
+
+    - name: streaming-payments
+      run: make streaming-payments
+
+    - name: encrypted-messaging
+      run: make encrypted-messaging
+
+    - name: rock-paper-scissors
+      run: make rock-paper-scissors
+      
+    - name: swap
+      run: make swap
