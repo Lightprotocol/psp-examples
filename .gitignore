@@ -18,3 +18,4 @@ test-ledger
 .idea
 
 build-circuit
+**/verifying_key_*.rs
