@@ -1,5 +1,5 @@
 import { BN, BorshAccountsCoder, utils } from "@coral-xyz/anchor";
-import { IDL } from "../target/types/multisig";
+import { IDL } from "./types/multisig";
 import { Account, Utxo } from "@lightprotocol/zk.js";
 import nacl from "tweetnacl";
 import { MAX_SIGNERS } from "./constants";
@@ -12,7 +12,7 @@ const bs58 = require("bs58");
 // standardized, the first 32 bytes are the pubkey,
 // encrypt to aes
 
-export class MultiSig {
+export class MultisigParams {
   signersEncryptionPublicKeys: Array<Uint8Array>;
   threshold: BN;
   publicKeyX: Array<Uint8Array>;
@@ -54,9 +54,15 @@ export class MultiSig {
     this.publicKeyY = publicKeyY;
     this.nrSigners = new BN(nrSigners);
     this.signersEncryptionPublicKeys = signersEncryptionPublicKeys;
-    this.appDataHash = MultiSig.getHash(
+    this.appDataHash = MultisigParams.getHash(
       poseidon,
-      MultiSig.toArray(poseidon, threshold, nrSigners, publicKeyX, publicKeyY)
+      MultisigParams.toArray(
+        poseidon,
+        threshold,
+        nrSigners,
+        publicKeyX,
+        publicKeyY
+      )
     );
     this.seed = seed;
     this.account = new Account({ poseidon, seed: bs58.encode(seed) });
@@ -93,18 +99,14 @@ export class MultiSig {
       seed: new Uint8Array(32).fill(3).toString(),
     });
     dummyAccount.poseidonEddsaKeypair = {
-      publicKey: [
-          new Uint8Array(32).fill(0),
-        new Uint8Array(32).fill(0)
-      ],
+      publicKey: [new Uint8Array(32).fill(0), new Uint8Array(32).fill(0)],
       privateKey: new Uint8Array(32).fill(0),
     };
 
     let publicKeyX: Uint8Array[] = [];
     let publicKeyY: Uint8Array[] = [];
 
-    for (let signer of signers)
-    {
+    for (let signer of signers) {
       const pubkey = await signer.getEddsaPublicKey();
       publicKeyX.push(pubkey[0]);
       publicKeyY.push(pubkey[1]);
@@ -121,7 +123,7 @@ export class MultiSig {
       (signer) => signer.encryptionKeypair.publicKey
     );
 
-    return new MultiSig({
+    return new MultisigParams({
       poseidon,
       threshold,
       nrSigners,
@@ -140,10 +142,10 @@ export class MultiSig {
     return await coder.encode("createMultiSig", this);
   }
 
-  static fromBytes(poseidon, bytes: Buffer): MultiSig {
+  static fromBytes(poseidon, bytes: Buffer): MultisigParams {
     let coder = new BorshAccountsCoder(IDL);
     let decoded = coder.decode("createMultiSig", bytes);
-    return new MultiSig({ poseidon, ...decoded });
+    return new MultisigParams({ poseidon, ...decoded });
   }
 
   print() {
@@ -168,25 +170,46 @@ export class MultiSig {
     }
   }
 
+  debugString(): string {
+    let log = "----------------- MultiSig Parameters -----------------\n";
+    log += "threshold: " + this.threshold.toString() + "\n";
+    log += "Number of Signers: " + this.nrSigners.toString() + "\n";
+    log += "Shielded pubkey: " + this.appDataHash + "\n";
+
+    for (var i = 0; i < this.publicKeyX.length; i++) {
+      if (i < this.nrSigners.toNumber()) {
+        log +=
+          "Signer: " +
+          i +
+          utils.bytes.hex.encode(
+            Buffer.from(
+              Array.from([...this.publicKeyX[i], ...this.publicKeyY[i]]).flat()
+            )
+          ) +
+          "\n";
+      }
+    }
+    return log;
+  }
+
   static toArray(poseidon, threshold, nrSigners, publicKeyX, publicKeyY) {
     return [
       new BN(threshold),
       new BN(nrSigners),
       ...publicKeyX.map((s) =>
         new BN(poseidon.F.toString(s)).toArrayLike(Buffer, "le", 32)
-        ),
+      ),
       ...publicKeyY.map((s) =>
         new BN(poseidon.F.toString(s)).toArrayLike(Buffer, "be", 32)
-        )
+      ),
     ];
-
   }
 
   static getHash(poseidon, array) {
     return poseidon.F.toString(poseidon(array));
   }
 
-  static equal(multiSig1: MultiSig, multiSig2: MultiSig) {
+  static equal(multiSig1: MultisigParams, multiSig2: MultisigParams) {
     multiSig1.publicKeyX.map((key, i) =>
       assert.equal(
         key.toString(),

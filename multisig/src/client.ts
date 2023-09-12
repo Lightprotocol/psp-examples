@@ -19,7 +19,7 @@ import {
   updateMerkleTreeForTest,
   User,
 } from "@lightprotocol/zk.js";
-import { MultiSig } from "./multisigParams";
+import { MultisigParams } from "./multisigParams";
 import { Scalar } from "ffjavascript";
 // import boxen from 'boxen';
 import {
@@ -30,7 +30,7 @@ import {
 // import { MERKLE_TREE_KEY } from "light-sdk";
 // import { MockVerifier } from "./verifier";
 const path = require("path");
-import { IDL, Multisig as MultisigProgram } from "../target/types/multisig";
+import { IDL, Multisig as MultisigProgram } from "./types/multisig";
 
 import { verifierProgramId, MAX_SIGNERS } from "./constants";
 import { QueuedTransaction, Approval } from "./transaction";
@@ -48,7 +48,7 @@ import { publicKey } from "@coral-xyz/anchor/dist/cjs/utils";
  */
 export class MultiSigClient {
   signer: Account;
-  multiSigParams: MultiSig;
+  multiSigParams: MultisigParams;
   poseidon: any;
   eddsa: any;
   queuedTransactions: QueuedTransaction[];
@@ -62,7 +62,7 @@ export class MultiSigClient {
     eddsa,
     provider,
   }: {
-    multiSigParams: MultiSig;
+    multiSigParams: MultisigParams;
     signer: Account;
     poseidon: any;
     queuedTransactions?: QueuedTransaction[];
@@ -118,6 +118,7 @@ export class MultiSigClient {
       this.poseidon.F.e(Scalar.e(connectingHash))
     );
     const approval = new Approval({
+      signerIndex: index,
       publicKey,
       signature,
     });
@@ -169,7 +170,7 @@ export class MultiSigClient {
     eddsa: any | undefined,
     provider: Provider
   ) {
-    const multisig = await MultiSig.createNewMultiSig({
+    const multisig = await MultisigParams.createNewMultiSig({
       poseidon,
       signers,
       threshold,
@@ -308,6 +309,7 @@ export class MultiSigClient {
     ) {
       this.queuedTransactions[index].approvals.push(
         new Approval({
+          signerIndex: index, //TODO: fix this
           publicKey: pubkeyDummy,
           signature: signatureDummy,
         })

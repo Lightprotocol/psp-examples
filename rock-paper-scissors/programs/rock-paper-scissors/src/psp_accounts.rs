@@ -82,7 +82,7 @@ pub struct LightInstructionThird<'info, const NR_CHECKED_INPUTS: usize> {
     pub log_wrapper: UncheckedAccount<'info>,
     #[account(mut)]
     pub event_merkle_tree: AccountLoader<'info, EventMerkleTree>,
-    #[account(mut), close=signer]
+    #[account(mut, close=signing_address)]
     pub game_pda: Box<Account<'info, GamePda>>,
 }
 

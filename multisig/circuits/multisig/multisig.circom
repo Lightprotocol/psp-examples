@@ -222,7 +222,6 @@ var baseVariables = 2;
 signal input signerPubkeysX[nrMaxSigners];
 signal input signerPubkeysY[nrMaxSigners];
 
-
 for (var appUtxoIndex = 0; appUtxoIndex < nAppUtxos; appUtxoIndex++) {
     instructionHasher[appUtxoIndex] = Poseidon(16);
     instructionHasher[appUtxoIndex].inputs[0] <== threshold;

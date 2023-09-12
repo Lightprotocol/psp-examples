@@ -12,7 +12,7 @@ export type QueuedTransactionsType = {
     signature: Uint8Array[];
   };
 };
-import { IDL } from "../target/types/multisig";
+import { IDL } from "./types/multisig";
 import { printUtxo } from "./client";
 
 export class Approval {
