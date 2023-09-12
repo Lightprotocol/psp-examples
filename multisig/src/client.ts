@@ -389,8 +389,7 @@ export const printUtxo = (
   utxo: Utxo,
   poseidon: any,
   index: number,
-  input: string,
-  multisig: MultiSigClient
+  input: string
 ) => {
   let string = `-------------- ${input} Utxo ${index} --------------\n`;
   string += `Amount sol: ${utxo.amounts[0]} \n`;
@@ -401,13 +400,6 @@ export const printUtxo = (
   string += `Commitment: ${utxo.getCommitment(poseidon)}\n`;
   string += `Verifier pubkey: ${utxo.verifierAddress.toBase58()}\n`;
   string += `Instruction hash: ${utxo.appDataHash.toString()}\n`;
-  if (
-    multisig &&
-    multisig.multiSigParams &&
-    multisig.multiSigParams.appDataHash
-  ) {
-    string += `Multisig appData hash: ${multisig.multiSigParams.appDataHash.toString()}\n`;
-  }
   string += "------------------------------------------";
   return string;
 };

@@ -17,14 +17,14 @@ import { printUtxo } from "./client";
 
 export class Approval {
   signature: Uint8Array;
-  // signerIndex: number;
+  signerIndex: number;
   publicKey: [Uint8Array, Uint8Array];
   constructor({
-    // signerIndex,
+    signerIndex,
     publicKey,
     signature,
   }: {
-    // signerIndex: number;
+    signerIndex: number;
     publicKey: [Uint8Array, Uint8Array];
     signature: Uint8Array;
   }) {
@@ -40,7 +40,7 @@ export class Approval {
     const coder = new BorshAccountsCoder(IDL);
     let decoded = coder.decode("approveTransaction", bytes);
     return new Approval({
-      // signerIndex: decoded.signerIndex,
+      signerIndex: decoded.signerIndex,
       publicKey: decoded.publicKey,
       signature: decoded.signature,
     });

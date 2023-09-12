@@ -157,4 +157,5 @@ pub struct CreateMultiSig {
 pub struct ApproveTransaction {
     signer_index: u8,
     signature: [u8; 64],
+    public_key: [[[u8; 32]; 7]; 2],
 }
