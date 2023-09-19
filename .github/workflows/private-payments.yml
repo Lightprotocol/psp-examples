@@ -1,14 +1,11 @@
 name: private-payments
-
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "sergey/perf_monitoring" ]
   pull_request:
-    branches: [ "main" ]
-
+    branches: [ "sergey/perf_monitoring" ]
 jobs:
   build:
-
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
@@ -17,16 +14,19 @@ jobs:
     strategy:
       matrix:
         nodeVersion: [18]
-
     steps:
     - uses: actions/checkout@v4
-
     - name: Setup Workspace
       uses: ./.github/actions/setup-workspace
       with:
         solanaVersion: "v1.16.9"
         anchorVersion: "0.28.0"
         nodeVersion: ${{ matrix.nodeVersion }}
-    
-    - name: private-payments
+    - name: Set start time
+      run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
+    - name: Run private-payments
       run: make private-payments
+    - name: Finish date
+      if: always()
+      run: |
+        echo "github_actions_psp_private_payments_total_duration $(expr $(date +%s) - ${START_TIME})" | curl --data-binary @- ${{ secrets.PUSHGATEWAY_URL }}/metrics/job/github_actions_psp_private_payments
