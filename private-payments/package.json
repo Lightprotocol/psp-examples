@@ -4,12 +4,12 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test-local": "light test-validator -b && yarn ts-node src/main.ts --exit"
+    "test-local": "light test-validator -b; yarn ts-node src/main.ts --exit"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.28.0",
-    "@lightprotocol/cli": "0.1.1-alpha.20",
-    "@lightprotocol/zk.js": "^0.3.2-alpha.14"
+    "@lightprotocol/cli": "0.1.1-alpha.21",
+    "@lightprotocol/zk.js": "0.3.2-alpha.15"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.1",
