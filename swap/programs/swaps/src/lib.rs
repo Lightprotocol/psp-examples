@@ -1,6 +1,7 @@
+use std::marker::PhantomData;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::hash::hash;
-
+use light_verifier_sdk::state::VerifierState10Ins;
 pub mod psp_accounts;
 pub use psp_accounts::*;
 pub mod auto_generated_accounts;
@@ -17,11 +18,9 @@ pub const PROGRAM_ID: &str = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS";
 
 #[program]
 pub mod swaps {
-    use light_verifier_sdk::light_transaction::{Amounts, Proof};
-
     use super::*;
 
-    /// This instruction is the first step of a shieled transaction.
+    /// This instruction is the first step of a shielded transaction.
     /// It creates and initializes a verifier state account to save state of a verification during
     /// computation verifying the zero-knowledge proof (ZKP). Additionally, it stores other data
     /// such as leaves, amounts, recipients, nullifiers, etc. to execute the protocol logic
@@ -40,36 +39,38 @@ pub mod swaps {
             InstructionDataLightInstructionFirst::try_deserialize_unchecked(
                 &mut [vec![0u8; 8], inputs].concat().as_slice(),
             )?;
-        let proof = Proof {
-            a: [0u8; 64],
-            b: [0u8; 128],
-            c: [0u8; 64],
-        };
-        let public_amount = Amounts {
-            sol: inputs_des.public_amount_sol,
-            spl: inputs_des.public_amount_spl,
-        };
-        let pool_type = [0u8; 32];
+
         let mut program_id_hash = hash(&ctx.program_id.to_bytes()).to_bytes();
         program_id_hash[0] = 0;
 
-        let mut checked_inputs: [[u8; 32]; VERIFYINGKEY_SWAPS.nr_pubinputs] =
-            [[0u8; 32]; VERIFYINGKEY_SWAPS.nr_pubinputs];
-        checked_inputs[0] = program_id_hash;
-        checked_inputs[1] = inputs_des.transaction_hash;
+        let mut checked_public_inputs: [[u8; 32]; VERIFYINGKEY_SWAPS.nr_pubinputs] = [[0u8; 32]; VERIFYINGKEY_SWAPS.nr_pubinputs];
+        checked_public_inputs[0] = program_id_hash;
+        checked_public_inputs[1] = inputs_des.transaction_hash;
 
-        process_psp_instruction_first::<{ VERIFYINGKEY_SWAPS.nr_pubinputs }, 17>(
-            ctx,
-            &proof,
-            &public_amount,
-            &inputs_des.input_nullifier,
-            &inputs_des.output_commitment,
-            &checked_inputs,
-            &inputs_des.encrypted_utxos,
-            &pool_type,
-            &inputs_des.root_index,
-            &inputs_des.relayer_fee,
-        )
+        let state = VerifierState10Ins {
+            merkle_root_index: inputs_des.root_index,
+            signer: Pubkey::from([0u8; 32]),
+            nullifiers: inputs_des.input_nullifier.to_vec(),
+            leaves: inputs_des.output_commitment.to_vec(),
+            public_amount_spl: inputs_des.public_amount_spl,
+            public_amount_sol: inputs_des.public_amount_sol,
+            mint_pubkey: [0u8; 32],
+            merkle_root: [0u8; 32],
+            tx_integrity_hash: [0u8; 32],
+            relayer_fee: inputs_des.relayer_fee,
+            encrypted_utxos: inputs_des.encrypted_utxos,
+            checked_public_inputs,
+            proof_a: [0u8; 64],
+            proof_b: [0u8; 128],
+            proof_c: [0u8; 64],
+            transaction_hash: [0u8; 32],
+            e_phantom: PhantomData,
+        };
+
+        ctx.accounts.verifier_state.set_inner(state);
+        ctx.accounts.verifier_state.signer = *ctx.accounts.signing_address.key;
+
+        Ok(())
     }
 
     pub fn light_instruction_second<'a, 'b, 'c, 'info>(
@@ -94,72 +95,14 @@ pub mod swaps {
     /// The proof is verified with the parameters saved in the first transaction.
     /// At successful verification protocol logic is executed.
     pub fn light_instruction_third<'a, 'b, 'c, 'info>(
-        ctx: Context<
-            'a,
-            'b,
-            'c,
-            'info,
-            LightInstructionThird<'info, { VERIFYINGKEY_SWAPS.nr_pubinputs }>,
-        >,
+        ctx: Context<'a, 'b, 'c, 'info, LightInstructionThird<'info, { VERIFYINGKEY_SWAPS.nr_pubinputs }>>,
         inputs: Vec<u8>,
     ) -> Result<()> {
-        let mut reversed_public_inputs = ctx.accounts.verifier_state.checked_public_inputs[2];
-        reversed_public_inputs.reverse();
-        if reversed_public_inputs
-            != ctx
-                .accounts
-                .swap_pda
-                .swap
-                .swap_maker_program_utxo
-                .swapCommitmentHash
-                .x
-        {
-            for (idx, val) in ctx
-                .accounts
-                .verifier_state
-                .checked_public_inputs
-                .iter()
-                .enumerate()
-            {
-                msg!("Public input {}={:?}", idx, val);
-            }
-
-            msg!("{:?}", ctx.accounts.verifier_state.checked_public_inputs);
-            msg!(
-                "{:?}",
-                ctx.accounts
-                    .swap_pda
-                    .swap
-                    .swap_maker_program_utxo
-                    .swapCommitmentHash
-            );
-            panic!("player_one_program_utxo does not match");
-        }
-        let mut reversed_public_inputs = ctx.accounts.verifier_state.checked_public_inputs[3];
-        reversed_public_inputs.reverse();
-        if reversed_public_inputs
-            != ctx
-                .accounts
-                .swap_pda
-                .swap
-                .swap_taker_program_utxo
-                .unwrap()
-                .swapCommitmentHash
-                .x
-        {
-            msg!("{:?}", ctx.accounts.verifier_state.checked_public_inputs);
-            msg!(
-                "{:?}",
-                ctx.accounts
-                    .swap_pda
-                    .swap
-                    .swap_taker_program_utxo
-                    .unwrap()
-                    .swapCommitmentHash
-            );
-            panic!("swap_maker_program_utxo does not match");
-        }
-        verify_programm_proof(&ctx, &inputs)?;
+        msg!(
+            "checked inputs {:?}",
+            ctx.accounts.verifier_state.checked_public_inputs[2]
+        );
+        verify_program_proof(&ctx, &inputs)?;
         cpi_verifier_two(&ctx, &inputs)
     }
 
@@ -188,7 +131,7 @@ pub mod swaps {
 
         msg!("gch as [u8;32] = {:?}", gch);
 
-        let _res = anchor_lang::prelude::Pubkey::find_program_address(&[&gch], ctx.program_id).0;
+        let _res = Pubkey::find_program_address(&[&gch], ctx.program_id).0;
         msg!("find_program_address {:?}", utxo);
 
         ctx.accounts.swap_pda.swap = Swap::new(utxo.try_into().unwrap());
