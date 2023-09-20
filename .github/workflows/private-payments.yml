@@ -3,8 +3,12 @@ name: private-payments
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'private-payments/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'private-payments/**'
 
 jobs:
   build:

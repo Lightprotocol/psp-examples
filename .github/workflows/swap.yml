@@ -3,8 +3,12 @@ name: swap
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'swap/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'swap/**'
 
 jobs:
   build:

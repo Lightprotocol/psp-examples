@@ -3,8 +3,12 @@ name: encrypted-messaging
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'encrypted-messaging/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'encrypted-messaging/**'
 
 jobs:
   build:

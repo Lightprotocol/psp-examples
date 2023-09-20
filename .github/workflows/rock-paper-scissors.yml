@@ -3,8 +3,12 @@ name: rock-paper-scissors
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'rock-paper-scissors/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'rock-paper-scissors/**'
 
 jobs:
   build:

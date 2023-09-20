@@ -3,8 +3,12 @@ name: private-compressed-account
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'private-compressed-account/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'private-compressed-account/**'
 
 jobs:
   build:

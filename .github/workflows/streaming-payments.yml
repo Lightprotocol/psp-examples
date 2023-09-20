@@ -3,8 +3,12 @@ name: streaming-payments
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'streaming-payments/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'streaming-payments/**'
 
 jobs:
   build:
