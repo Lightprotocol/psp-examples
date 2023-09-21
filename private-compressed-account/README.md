@@ -10,7 +10,7 @@ Before running the code, ensure that you have the following installed on your ma
 
 - [circom](https://docs.circom.io/getting-started/installation/) > 2.0.0
 
-- [Light CLI](https://www.npmjs.com/package/@lightprotocol/cli) >= 0.1.1-alpha.21
+- [Light CLI](https://www.npmjs.com/package/@lightprotocol/cli) >= 0.1.1-alpha.20
 
 - rust
 
