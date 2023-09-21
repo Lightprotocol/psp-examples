@@ -1,46 +1,23 @@
 import * as anchor from "@coral-xyz/anchor";
-import { assert } from "chai";
 import {
-  Account,
-  Utxo,
   Transaction,
-  TransactionParameters,
   Provider as LightProvider,
   confirmConfig,
-  Action,
   TestRelayer,
   User,
-  ProgramUtxoBalance,
-  ConfirmOptions,
   airdropSol,
   verifierProgramStorageProgramId,
-  verifierProgramTwoProgramId,
-  ProgramParameters,
   merkleTreeProgramId,
-  LOOK_UP_TABLE,
-  AUTHORITY,
-  MerkleTreeConfig,
 } from "@lightprotocol/zk.js";
-import { SystemProgram, PublicKey, Keypair } from "@solana/web3.js";
-
-import { buildPoseidonOpt } from "circomlibjs";
+import { Keypair } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import path from "path";
 import { MessageClient } from "./helpers";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-const verifierProgramId = new PublicKey(
-  "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-);
-let POSEIDON: any;
 
 const RPC_URL = "http://127.0.0.1:8899";
 
 describe("Test foobar", () => {
   const provider = setupAnchor();
-
-  before(async () => {
-    POSEIDON = await buildPoseidonOpt();
-  });
 
   it("Test encrypted messaging", async () => {
     const authorityPda = Transaction.getSignerAuthorityPda(

@@ -1,4 +1,4 @@
-use crate::verifying_key_psp_payment_streaming::VERIFYINGKEY_PSP_PAYMENT_STREAMING;
+use crate::verifying_key_streaming_payments::VERIFYINGKEY_STREAMING_PAYMENTS;
 use crate::LightInstructionFirst;
 use crate::LightInstructionThird;
 use anchor_lang::prelude::*;
@@ -58,7 +58,7 @@ pub fn process_psp_instruction_first<
         pool_type,
         checked_public_inputs,
         accounts: None,
-        verifyingkey: &VERIFYINGKEY_PSP_PAYMENT_STREAMING,
+        verifyingkey: &VERIFYINGKEY_STREAMING_PAYMENTS,
     };
     let tx =
         Transaction::<NR_CHECKED_INPUTS, 2, 4, NR_PUBLIC_INPUTS, TransactionsConfig>::new(input);
@@ -143,7 +143,7 @@ pub fn verify_programm_proof<'a, 'b, 'c, 'info, const NR_CHECKED_INPUTS: usize>(
     let mut app_verifier = AppTransaction::<NR_CHECKED_INPUTS, TransactionsConfig>::new(
         &proof_app,
         &ctx.accounts.verifier_state.checked_public_inputs,
-        &VERIFYINGKEY_PSP_PAYMENT_STREAMING,
+        &VERIFYINGKEY_STREAMING_PAYMENTS,
     );
 
     app_verifier.verify()

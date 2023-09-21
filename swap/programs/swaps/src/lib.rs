@@ -107,12 +107,12 @@ pub mod swaps {
         reversed_public_inputs.reverse();
         if reversed_public_inputs
             != ctx
-                .accounts
-                .swap_pda
-                .swap
-                .swap_maker_program_utxo
-                .swapCommitmentHash
-                .x
+            .accounts
+            .swap_pda
+            .swap
+            .swap_maker_program_utxo
+            .swapCommitmentHash
+            .x
         {
             for (idx, val) in ctx
                 .accounts
@@ -139,13 +139,13 @@ pub mod swaps {
         reversed_public_inputs.reverse();
         if reversed_public_inputs
             != ctx
-                .accounts
-                .swap_pda
-                .swap
-                .swap_taker_program_utxo
-                .unwrap()
-                .swapCommitmentHash
-                .x
+            .accounts
+            .swap_pda
+            .swap
+            .swap_taker_program_utxo
+            .unwrap()
+            .swapCommitmentHash
+            .x
         {
             msg!("{:?}", ctx.accounts.verifier_state.checked_public_inputs);
             msg!(

@@ -1,0 +1,25 @@
+name: Build and run PSP examples
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'PSP example'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - encrypted-messaging
+          - private-compressed-account
+          - private-payments
+          - rock-paper-scissors
+          - streaming-payments
+          - swap
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run PSP examples
+        run: make ${{ inputs.project }}

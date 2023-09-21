@@ -8,14 +8,14 @@ include "../../node_modules/circomlib/circuits/comparators.circom";
 // will create a new instance of the circuit
 #[instance]
 {
-    fileName: pspPaymentStreaming,
+    fileName: streaming_payments,
     config(),
     nrAppUtoxs: 1,
     publicInputs: [currentSlot]
 }
 
 #[lightTransaction(verifierTwo)]
-template pspPaymentStreaming() {
+template streaming_payments() {
     /**
     * -------------------------- Application starts here --------------------------
     */

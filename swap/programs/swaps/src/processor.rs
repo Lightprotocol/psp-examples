@@ -127,7 +127,7 @@ pub fn cpi_verifier_two<'a, 'b, 'c, 'info, const NR_CHECKED_INPUTS: usize>(
         <Vec<u8> as TryInto<[u8; 32]>>::try_into(
             ctx.accounts.verifier_state.checked_public_inputs[1].to_vec(),
         )
-        .unwrap(),
+            .unwrap(),
     )
 }
 

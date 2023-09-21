@@ -1,0 +1,36 @@
+name: encrypted-messaging
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'encrypted-messaging/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'encrypted-messaging/**'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        nodeVersion: [18]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Workspace
+      uses: ./.github/actions/setup-workspace
+      with:
+        solanaVersion: "v1.16.9"
+        anchorVersion: "0.28.0"
+        nodeVersion: ${{ matrix.nodeVersion }}
+
+    - name: encrypted-messaging
+      run: make encrypted-messaging

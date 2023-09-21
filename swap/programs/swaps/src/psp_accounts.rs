@@ -94,11 +94,11 @@ pub struct CreateSwapInstruction<'info> {
     pub signer: Signer<'info>,
     #[allow(non_snake_case)]
     #[account(
-        init,
-        seeds = [&swap_commitment_hash[swap_commitment_hash.len()-64..swap_commitment_hash.len()-32]],
-        bump,
-        payer = signer,
-        space = 3000)
+    init,
+    seeds = [&swap_commitment_hash[swap_commitment_hash.len()-64..swap_commitment_hash.len()-32]],
+    bump,
+    payer = signer,
+    space = 3000)
     ]
     pub swap_pda: Account<'info, SwapPda>,
     pub system_program: Program<'info, System>,
@@ -109,8 +109,8 @@ pub struct CloseSwap<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
-        mut,
-        close=signer
+    mut,
+    close=signer
     )]
     pub swap_pda: Account<'info, SwapPda>,
 }

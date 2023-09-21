@@ -460,10 +460,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@lightprotocol/cli@^0.1.1-alpha.20":
-  version "0.1.1-alpha.21"
-  resolved "https://registry.yarnpkg.com/@lightprotocol/cli/-/cli-0.1.1-alpha.21.tgz#bfc0aa58fad3a24ebca2d7cb1bc7bbf8c2e7cee9"
-  integrity sha512-SRyNGA587nCR6aEV6P0BIrLFsVD+HWUqhohaTDT2w/QFiE7qEwKsrCmRWb4mggHBLiN1HVI5s0BcsRk2Emki3g==
+"@lightprotocol/cli@0.1.1-alpha.20":
+  version "0.1.1-alpha.20"
+  resolved "https://registry.yarnpkg.com/@lightprotocol/cli/-/cli-0.1.1-alpha.20.tgz#453faf7266f234f88ad224167bbc351ede071800"
+  integrity sha512-aw/ymuEzqDKbGHCVk+q/cCIncLpSNyRAsIHwWX9vliXP85hqK34tJNf6/Osxh1gTZTmoBR8xEo0JPJFX0LGBHw==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@lightprotocol/zk.js" "0.3.2-alpha.14"
@@ -500,7 +500,7 @@
     ffjavascript "^0.2.60"
     snarkjs "^0.7.0"
 
-"@lightprotocol/zk.js@0.3.2-alpha.14", "@lightprotocol/zk.js@^0.3.2-alpha.14":
+"@lightprotocol/zk.js@0.3.2-alpha.14":
   version "0.3.2-alpha.14"
   resolved "https://registry.yarnpkg.com/@lightprotocol/zk.js/-/zk.js-0.3.2-alpha.14.tgz#48765876f128055fcebf048474a1734990a0ad62"
   integrity sha512-DmxyNu2MwZZElMo0eNqJdGrDdXUUSVEEw9Ap+CPbg+xMqiZ4+FQE7pOMF2tR4RIIkqTXdvsG0Y/LoIiJ4B+gYg==
